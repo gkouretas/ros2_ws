@@ -7,7 +7,7 @@ from idl_definitions.msg import MindroveArmBandMsg
 from python_utils.ros2_utils.comms.message_csv_logger import ROSMessageCSVLogger
 from python_utils.ros2_utils.comms.node_manager import get_node
 
-class ROSPluxCSVLogger(ROSMessageCSVLogger):
+class ROSMindroveCSVLogger(ROSMessageCSVLogger):
     def __init__(self, log_name: str, **kwargs):
         super().__init__(
             node = get_node(MINDROVE_ROS_NODE), 

@@ -10,7 +10,8 @@ from mindrove_typedefs import *
 from mindrove_configs import *
 
 from idl_definitions.msg import MindroveArmBandMsg
-# from geometry_msgs.msg import Vector3, Quaternion
+from geometry_msgs.msg import Vector3
+# from geometry_msgs.msg import Quaternion
 from python_utils.ros2_utils.comms.node_manager import get_node
 
 # Hardware definition for real arm band
@@ -66,9 +67,9 @@ class MindroveArmbandRosPublisher(MindroveInterface):
          msg.gyro = []
          # msg.quat = []
       
-         # for accel, gyro in zip(data[MindroveChannels.ACCEL].T, data[MindroveChannels.GYRO].T):
-         #    msg.accel.append(Vector3(x = accel[0], y = accel[1], z = accel[2]))
-         #    msg.gyro.append(Vector3(x = gyro[0], y = gyro[1], z = gyro[2]))
+         for accel, gyro in zip(data[MindroveChannels.ACCEL].T, data[MindroveChannels.GYRO].T):
+            msg.accel.append(Vector3(x = accel[0], y = accel[1], z = accel[2]))
+            msg.gyro.append(Vector3(x = gyro[0], y = gyro[1], z = gyro[2]))
 
          #    self._last_pose = self._pose_estimator.updateIMU(self._last_pose, gyro, accel)
          #    msg.quat.append(Quaternion(w = self._last_pose[0], x = self._last_pose[1], y = self._last_pose[2], z = self._last_pose[3])) 

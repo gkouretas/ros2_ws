@@ -33,6 +33,7 @@ class MindroveInterface(BoardShim):
       self._scaling_factors = get_scaling_factors(self)
 
       self._buf_size: int
+      self._num: int = 0
       
       self._channel_map: Dict[str, Union[int, List[int]]] = {
          k: [] for k in self._desc.channels
@@ -87,7 +88,7 @@ class MindroveInterface(BoardShim):
           lag_compensation (bool, optional): Will apply lag compensation by reducing the dynamic delays based 
           upon the estimated latency. Defaults to True.
       """
-      n = 0
+      self._num = 0
       avg_lag = 0.0
       callback = self.get_data_buffer
 
@@ -99,11 +100,11 @@ class MindroveInterface(BoardShim):
             continue
          else:
             self.data_callback(t, sample)
-            n += 1
+            self._num += 1
 
             # Compute the average drift we are experiencing from the expected sampling rate
             if lag_compensation:
-               avg_lag = (avg_lag * (n-1) + (t - sample["timestamp"][-1])) / n
+               avg_lag = (avg_lag * (self._num-1) + (t - sample["timestamp"][-1])) / self._num
 
             # Compute delay time
             # Offset by the computed lag

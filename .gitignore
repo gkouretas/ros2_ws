@@ -20,3 +20,7 @@ log
 
 # Settings
 .vscode
+
+# Logs
+*.log
+*.csv

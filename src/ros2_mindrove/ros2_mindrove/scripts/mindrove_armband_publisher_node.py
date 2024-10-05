@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-from mindrove_interface import MindroveInterface
 from mindrove_typedefs import *
 from mindrove_armband_publisher import MindroveArmbandRosPublisher
 from mindrove.utils import LogLevels

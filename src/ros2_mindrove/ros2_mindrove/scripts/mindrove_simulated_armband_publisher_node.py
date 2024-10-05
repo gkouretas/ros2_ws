@@ -1,4 +1,4 @@
-from mindrove_interface import MindroveInterface
+#!/usr/bin/python3
 from mindrove_typedefs import *
 from mindrove_armband_publisher import MindroveArmbandRosPublisher
 from mindrove.utils import LogLevels
@@ -11,7 +11,7 @@ def main() -> None:
    )
 
    interface.run(
-      num_samples = 1, 
+      num_samples = 2, 
       nonblocking = False,
       lag_compensation = True
    )

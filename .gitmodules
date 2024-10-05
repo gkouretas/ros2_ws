@@ -1,6 +1,6 @@
 [submodule "thirdparty/plux/python-samples"]
 	path = thirdparty/plux/python-samples
 	url = https://github.com/pluxbiosignals/python-samples
-[submodule "python-utils"]
-	path = python-utils
-	url = https://github.com/gkouretas/python-utils
+[submodule "python_utils"]
+	path = python_utils
+	url = https://github.com/gkouretas/python_utils

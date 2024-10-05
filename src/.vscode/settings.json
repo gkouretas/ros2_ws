@@ -1,0 +1,16 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/home/georgekouretas/ros2_ws/install/ros2_plux_biosignals/lib/python3.10/site-packages",
+        "/home/georgekouretas/ros2_ws/install/ros2_mindrove/lib/python3.10/site-packages",
+        "/home/georgekouretas/ros2_ws/install/idl_definitions/local/lib/python3.10/dist-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/georgekouretas/ros2_ws/install/ros2_plux_biosignals/lib/python3.10/site-packages",
+        "/home/georgekouretas/ros2_ws/install/ros2_mindrove/lib/python3.10/site-packages",
+        "/home/georgekouretas/ros2_ws/install/idl_definitions/local/lib/python3.10/dist-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ]
+}

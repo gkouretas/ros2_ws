@@ -17,3 +17,6 @@
 build
 install
 log
+
+# Settings
+.vscode

@@ -19,7 +19,7 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from ros2_plux_biosignals.plux_publisher import MyPluxThread
 from ros2_plux_biosignals.plux_configs import *
 from idl_definitions.msg import PluxMsg
-from utils.comms.node_manager import get_node
+from python_utils.ros2_utils.comms.node_manager import get_node
 
 def main() -> None:
     log_publisher = get_node(PLUX_ROS_NODE).create_publisher(PLUX_ROS_DEBUG_PUBLISHER)

@@ -4,8 +4,8 @@ from __future__ import annotations
 from plux_configs import *
 from idl_definitions.msg import PluxMsg
 
-from utils.ros2_utils.message_csv_logger import ROSMessageCSVLogger
-from utils.ros2_utils.node_manager import get_node
+from python_utils.ros2_utils.comms.message_csv_logger import ROSMessageCSVLogger
+from python_utils.ros2_utils.comms.node_manager import get_node
 
 class ROSPluxCSVLogger(ROSMessageCSVLogger):
     def __init__(self, log_name: str, **kwargs):

@@ -7,7 +7,7 @@ sys.path.append("~/ros2_ws")
 sys.path.append(os.path.dirname(__file__))
 
 from plux_configs import *
-from utils.comms.node_manager import create_simple_node
+from python_utils.ros2_utils.comms.node_manager import create_simple_node
 
 # Import plux API
 PLUX_API_PATH = "thirdparty/plux/python-samples/PLUX-API-Python3"

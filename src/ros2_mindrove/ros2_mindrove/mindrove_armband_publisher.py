@@ -11,7 +11,7 @@ from mindrove_configs import *
 
 from idl_definitions.msg import MindroveArmBandMsg
 from geometry_msgs.msg import Vector3, Quaternion
-from utils.comms.node_manager import get_node
+from python_utils.ros2_utils.comms.node_manager import get_node
 
 # Hardware definition for real arm band
 MindroveArmBand = MindroveHardwareDescription(

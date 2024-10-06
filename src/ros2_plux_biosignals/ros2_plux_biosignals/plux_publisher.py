@@ -19,7 +19,7 @@ from plux_configs import *
 from plux_processing import *
 from plux_typedefs import *
 from idl_definitions.msg import PluxMsg
-from python_utils.ros2_utils.comms.node_manager import get_node
+from python_utils.ros2_utils.comms.node_manager import get_node, get_realtime_qos_profile
 
 from std_msgs.msg import Header
 
@@ -39,7 +39,7 @@ class MyPluxDevice(plux.SignalsDev):
         plux.SignalsDev.__init__(address)
 
         self.table: list[PluxSensor] = []
-        self.plux_publisher = get_node(PLUX_ROS_NODE).create_publisher(PluxMsg, PLUX_ROS_TOPIC_NAME, 0)
+        self.plux_publisher = get_node(PLUX_ROS_NODE).create_publisher(PluxMsg, PLUX_ROS_TOPIC_NAME, get_realtime_qos_profile())
         self._setup_sensor_table()
         self._frame = -1
 
@@ -53,7 +53,7 @@ class MyPluxDevice(plux.SignalsDev):
 
     def onRawFrame(self, nSeq, data):
         plux_msg = PluxMsg()
-        plux_msg.world_timestamp = rclpy.clock.Clock.now()
+        plux_msg.world_timestamp = time.time()
         
         if self._frame + 1 != nSeq: print(f"pub frame skip {self._frame} {nSeq}")
         self._frame = nSeq

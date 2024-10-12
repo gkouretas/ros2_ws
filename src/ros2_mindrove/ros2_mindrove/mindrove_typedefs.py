@@ -33,7 +33,6 @@ class MindroveChannels(str, enum.Enum):
    TEMPERATURE = "temperature"
    RESISTANCE = "resistance"
 
-MindroveSampleSingle = Dict[MindroveChannels, Optional[Union[Float64, NDArray[Float64]]]]
 MindroveSampleBuffer = Dict[MindroveChannels, Optional[NDArray[Float64]]]
 
 @dataclass(frozen = True)
@@ -67,7 +66,7 @@ class MindroveInputParamsConstructor:
       fields.
 
       Returns:
-          MindRoveInputParams: Input parameters`
+          MindRoveInputParams: Input parameters
       """
       params = MindRoveInputParams()
       for k,v in self.__dict__.items():
@@ -83,11 +82,8 @@ class MindroveHardwareDescription:
    This contains all essential configuration fields:
    
    @param board_id: Board ID for hardware
-   
    @param params: Input parameters for hardware
-   
    @param preset: MindrovePresets object
-   
    @param channels: Relevant channels to monitor for hardware
    """
    board_id: BoardIds

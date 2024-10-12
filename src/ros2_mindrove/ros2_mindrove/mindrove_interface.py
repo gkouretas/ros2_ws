@@ -15,7 +15,8 @@ class MindroveInterface(BoardShim):
       self, 
       desc: MindroveHardwareDescription, 
       additional_channels: Tuple[str, ...] = ("timestamp",),
-      log_level: LogLevels = LogLevels.LEVEL_OFF
+      log_level: LogLevels = LogLevels.LEVEL_OFF,
+      samples_per_interval: int = 1
    ) -> None:
       """
       MindroveInterface, built on top of `BoardShim`
@@ -30,8 +31,7 @@ class MindroveInterface(BoardShim):
 
       self._desc = desc
       self._sampling_interval = 1/self.get_sampling_rate(self._desc.board_id, self._desc.preset)
-      self._num_samples_per_interval = 2
-      self._sampling_rate = self._sampling_interval / self._num_samples_per_interval
+      self._sampling_rate = self._sampling_interval / samples_per_interval
 
       self._scaling_factors = get_scaling_factors()
 
@@ -102,6 +102,9 @@ class MindroveInterface(BoardShim):
             # Ignore empty sample
             continue
          else:
+            if (self._num == 0):
+               self.log_message(LogLevels.LEVEL_INFO, "Received first sample")
+               
             self.data_callback(t, sample)
             self._num += 1
 
@@ -114,13 +117,13 @@ class MindroveInterface(BoardShim):
             delay_s = max(0.0, self._sampling_interval - (timeit.default_timer() - t0) - avg_lag)
             time.sleep(delay_s)
 
-   def data_callback(self, timestamp: float, data: Union[MindroveSampleSingle, MindroveSampleBuffer]) -> None:
+   def data_callback(self, timestamp: float, data: MindroveSampleBuffer) -> None:
       """
       Abstract method for a data callback
 
       Args:
           timestamp (float): Timestamp [sec] where data is received
-          data (Union[MindroveSampleSingle, MindroveSampleBuffer]): Mindrove sample
+          data (MindroveSampleBuffer): Mindrove sample buffer
       """
       raise NotImplementedError
 
@@ -136,7 +139,7 @@ class MindroveInterface(BoardShim):
          func_name = f"get_{channel}_channel"
          self._channel_map[channel] = getattr(BoardShim, func_name)(self._desc.board_id, self._desc.preset)
 
-   def _sample_is_empty(self, sample: Union[MindroveSampleSingle, MindroveSampleBuffer]):
+   def _sample_is_empty(self, sample: MindroveSampleBuffer):
       for v in sample.values():
          if v is None: return True
 

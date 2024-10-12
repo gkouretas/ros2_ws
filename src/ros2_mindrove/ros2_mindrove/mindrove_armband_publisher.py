@@ -1,6 +1,3 @@
-# import ahrs
-# import numpy as np
-
 from typing import Tuple
 from mindrove_interface import MindroveInterface
 
@@ -11,7 +8,6 @@ from mindrove_configs import *
 
 from idl_definitions.msg import MindroveArmBandEightChannelMsg
 from geometry_msgs.msg import Vector3
-# from geometry_msgs.msg import Quaternion
 from python_utils.ros2_utils.comms.node_manager import get_node
 
 # Hardware definition for real arm band
@@ -40,7 +36,7 @@ SimulatedArmBand = MindroveHardwareDescription(
 
 class MindroveArmbandRosPublisher(MindroveInterface):
     def __init__(self, simulated: bool = False, additional_channels: Tuple[str, ...] = ..., log_level: LogLevels = LogLevels.LEVEL_OFF) -> None:
-        super().__init__(SimulatedArmBand if simulated else MindroveArmBand, additional_channels, log_level)
+        super().__init__(SimulatedArmBand if simulated else MindroveArmBand, additional_channels, log_level, samples_per_interval = 2)
         self.mindrove_publisher = get_node(MINDROVE_ROS_NODE).create_publisher(MindroveArmBandEightChannelMsg, MINDROVE_ROS_TOPIC_NAME, 0)
         self._ctrl_ts: float = 0.0
 

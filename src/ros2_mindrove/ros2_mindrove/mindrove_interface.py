@@ -30,7 +30,10 @@ class MindroveInterface(BoardShim):
 
       self._desc = desc
       self._sampling_interval = 1/self.get_sampling_rate(self._desc.board_id, self._desc.preset)
-      self._scaling_factors = get_scaling_factors(self)
+      self._num_samples_per_interval = 2
+      self._sampling_rate = self._sampling_interval / self._num_samples_per_interval
+
+      self._scaling_factors = get_scaling_factors()
 
       self._buf_size: int
       self._num: int = 0

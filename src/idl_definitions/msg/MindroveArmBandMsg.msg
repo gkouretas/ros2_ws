@@ -1,3 +1,4 @@
+# Deprecated...
 uint64 frame
 float64 world_timestamp
 uint64 num_samples

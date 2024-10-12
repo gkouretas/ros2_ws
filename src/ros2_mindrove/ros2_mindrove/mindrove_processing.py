@@ -1,10 +1,9 @@
 """
 Utility functions for processing Mindrove signals
 """
-from mindrove import BoardShim
 from mindrove_typedefs import *
 
-def get_scaling_factors(interface: BoardShim) -> Dict[MindroveChannels, float]:
+def get_scaling_factors() -> Dict[MindroveChannels, float]:
    """
    Get relevant scaling factors to convert from ADC -> real units.
 
@@ -21,20 +20,18 @@ def get_scaling_factors(interface: BoardShim) -> Dict[MindroveChannels, float]:
        a Mindrove channel enum / string identifier.
    """
    # Expected format is: x.y.z
-   version = tuple((int(x) for x in interface.get_version().split(".")))
+   # version = tuple((int(x) for x in interface.get_version().split(".")))
+
+   # NOTE: these are the scaling factors, pre-5.0.0
+   # Return these if relevant, no easy way to check the version w/ this...   
+   # return {
+   #    MindroveChannels.EMG: 0.045,
+   #    MindroveChannels.ACCEL: 0.061035e-3 * 9.81,
+   #    MindroveChannels.GYRO: 0.01526
+   # }
    
-   if version >= (0, 0, 1):
-      # Per Mindrove, the IMU data is already scaled
-      # Apply an additional 9.81x for the accelerometer
-      # to convert to m/s^2
-      return {
-         MindroveChannels.EMG: 1.0,
-         MindroveChannels.ACCEL: 9.81,
-         MindroveChannels.GYRO: 0.0174533 # 180 / pi
-      }
-   else:
-      return {
-         MindroveChannels.EMG: 0.045,
-         MindroveChannels.ACCEL: 0.061035e-3 * 9.81,
-         MindroveChannels.GYRO: 0.01526
-      }
+   return {
+      MindroveChannels.EMG: 1.0,       # [uV]
+      MindroveChannels.ACCEL: 9.81,    # [g] -> [m/s^2] 
+      MindroveChannels.GYRO: 1.0       # [dps]
+   }

@@ -11,7 +11,7 @@ def main() -> None:
    )
 
    interface.run(
-      num_samples = 2, 
+      num_samples = 200, 
       nonblocking = False,
       lag_compensation = True
    )

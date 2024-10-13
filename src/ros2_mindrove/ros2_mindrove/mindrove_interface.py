@@ -30,8 +30,8 @@ class MindroveInterface(BoardShim):
       self.prepare_session()
 
       self._desc = desc
-      self._sampling_interval = 1/self.get_sampling_rate(self._desc.board_id, self._desc.preset)
-      self._sampling_rate = self._sampling_interval / samples_per_interval
+      self._sampling_interval = 1.0 / self.get_sampling_rate(self._desc.board_id, self._desc.preset)
+      self._sampling_rate = samples_per_interval / self._sampling_interval
 
       self._scaling_factors = get_scaling_factors()
 
@@ -41,6 +41,7 @@ class MindroveInterface(BoardShim):
       self._channel_map: Dict[str, Union[int, List[int]]] = {
          k: [] for k in self._desc.channels
       }
+      
       self._init_channel_map(additional_channels)
 
    def start_stream(self, num_samples: int, streamer_params: str = None) -> None:

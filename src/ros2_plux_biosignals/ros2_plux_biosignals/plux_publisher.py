@@ -54,8 +54,13 @@ class MyPluxDevice(plux.SignalsDev):
     def onRawFrame(self, nSeq, data):
         plux_msg = PluxMsg()
         plux_msg.world_timestamp = time.time()
+
+        if nSeq == 0:
+            print(f"First frame received")
         
-        if self._frame + 1 != nSeq: print(f"pub frame skip {self._frame} {nSeq}")
+        if self._frame + 1 != nSeq: 
+            print(f"Publisher frame skip {self._frame} {nSeq}")
+            
         self._frame = nSeq
 
         plux_msg.frame = nSeq

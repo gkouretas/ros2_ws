@@ -1,6 +1,9 @@
 from enum import Enum
 from control_msgs.action import FollowJointTrajectory
 from std_msgs.msg._float64_multi_array import Float64MultiArray
+from ur10e_typedefs import (
+    URService,
+)
 
 UR10E_FORCE_TORQUE_NODE = "tcp_fts_sensor"
 UR10E_FORCE_PUBLISHER = "force"

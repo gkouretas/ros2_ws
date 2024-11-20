@@ -106,10 +106,33 @@ class HomeURRobot(URController):
 
 
 def main():
-    import threading
+    import time
     import rclpy
 
-    controller = HomeURRobot("ur_custom_controller")
-    threading.Thread(target = controller.run, daemon = True).start()
-    rclpy.spin(controller)
-    controller.stop()
+    from ur_robot_node import URRobot
+    from ur10e_typedefs import URService
+    from controller_manager_msgs.srv import SwitchController
+    from ur_dashboard_msgs.srv import GetRobotMode
+    from std_srvs.srv import Trigger
+
+    robot = URRobot("ur_custom_controller")
+    
+    robot.get_logger().info(f"Power on: {robot.call_service(URService.DashboardClient.SRV_POWER_ON, Trigger.Request())}")
+    robot.get_logger().info(f"Brake release: {robot.call_service(URService.DashboardClient.SRV_BRAKE_RELEASE, Trigger.Request())}")
+    time.sleep(1)
+    robot.get_logger().info(f"Running mode: {robot.call_service(URService.DashboardClient.SRV_GET_ROBOT_MODE, GetRobotMode.Request())}")
+    robot.get_logger().info(f"Resend command: {robot.call_service(URService.IOAndStatusController.SRV_RESEND_ROBOT_PROGRAM, Trigger.Request())}")
+
+    switch_request = SwitchController.Request()
+    switch_request.activate_controllers = ["scaled_joint_trajectory"]
+    robot.call_service(URService.ControllerManager.SRV_SWITCH_CONTROLLER, switch_request)
+
+    robot.send_trajectory([[0.0, np.radians(-90.0), 0.0, np.radians(-90.0), 0.0, 0.0]], [Duration(sec = 10)])
+    time.sleep(1)
+    robot.call_service(URService.DashboardClient.SRV_STOP, Trigger.Request())
+    rclpy.spin(robot)
+
+    # controller = HomeURRobot("ur_custom_controller")
+    # threading.Thread(target = controller.run, daemon = True).start()
+    # rclpy.spin(controller)
+    # controller.stop()

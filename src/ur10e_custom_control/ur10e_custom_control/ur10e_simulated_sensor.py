@@ -7,11 +7,13 @@ import time, timeit
 from rclpy.publisher import Publisher
 from geometry_msgs.msg import Vector3
 from ur10e_configs import *
-from utils.comms.node_manager import get_node
+from python_utils.ros2_utils.comms.node_manager import create_simple_node
 
 def main() -> None:
-    force_publisher: Publisher = get_node(UR10E_FORCE_TORQUE_NODE).create_publisher(Vector3, UR10E_FORCE_TORQUE_NODE + "/" + UR10E_FORCE_PUBLISHER, 0)
-    torque_publisher: Publisher = get_node(UR10E_FORCE_TORQUE_NODE).create_publisher(Vector3, UR10E_FORCE_TORQUE_NODE + "/" + UR10E_TORQUE_PUBLISHER, 0)
+    force_torque_node = create_simple_node(UR10E_FORCE_TORQUE_NODE)
+
+    force_publisher: Publisher = force_torque_node.create_publisher(Vector3, UR10E_FORCE_TORQUE_NODE + "/" + UR10E_FORCE_PUBLISHER, 0)
+    torque_publisher: Publisher = force_torque_node.create_publisher(Vector3, UR10E_FORCE_TORQUE_NODE + "/" + UR10E_TORQUE_PUBLISHER, 0)
 
     f = 500.0
     T = (1.0 * 2*np.pi) # 1.0 second period

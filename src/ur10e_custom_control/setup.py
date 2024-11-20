@@ -1,5 +1,5 @@
 from setuptools import find_packages, setup
-
+import glob
 package_name = 'ur10e_custom_control'
 
 setup(
@@ -11,7 +11,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-    ],
+    ] + [tuple(['share/' + package_name, [x]]) for x in glob.glob("launch/*.py")],
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='georgekouretas',
@@ -21,8 +21,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'test_move = ur10e_custom_control.test_move:main',
-            'sim_sensor = ur10e_custom_control.ur10e_simulated_sensor:main'
+            'home_robot = ur10e_custom_control.home_robot:main',
+            'joint_velocity_test = ur10e_custom_control.joint_velocity_controller:main'
         ],
     },
 )

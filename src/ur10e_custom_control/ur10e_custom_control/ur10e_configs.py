@@ -1,8 +1,12 @@
 from enum import Enum
+from control_msgs.action import FollowJointTrajectory
+from std_msgs.msg._float64_multi_array import Float64MultiArray
 
 UR10E_FORCE_TORQUE_NODE = "tcp_fts_sensor"
 UR10E_FORCE_PUBLISHER = "force"
 UR10E_TORQUE_PUBLISHER = "torque"
+
+UR_QOS_PROFILE = 1
 
 UR_JOINT_LIST: list[str] = [
     "shoulder_pan_joint",
@@ -18,6 +22,34 @@ class URControlModes(str, Enum):
     SCALED_JOINT_TRAJECTORY = "scaled_joint_trajectory_controller"
     FORWARD_VELOCITY = "forward_velocity_controller"
     FORWARD_POSITION = "forward_position"
+
+    @property
+    def action_type(self) -> type:
+        if self.value == self.JOINT_TRAJECTORY or self.value == self.SCALED_JOINT_TRAJECTORY:
+            return FollowJointTrajectory
+        else:
+            return None
+
+    @property
+    def action_type_topic(self) -> str:
+        if self.value == self.JOINT_TRAJECTORY or self.value == self.SCALED_JOINT_TRAJECTORY:
+            return self.value + "/follow_joint_trajectory"
+        else:
+            raise None
+        
+    @property
+    def publish_topic(self) -> type:
+        if self.value == self.FORWARD_VELOCITY or self.value == self.FORWARD_POSITION:
+            return Float64MultiArray
+        else:
+            return None
+        
+    @property
+    def publish_topic_name(self) -> str:
+        if self.value == self.FORWARD_VELOCITY or self.value == self.FORWARD_POSITION:
+            return "/" + self.value + "/commands"
+        else:
+            return None
 
 """
 controller_manager:
@@ -47,4 +79,4 @@ controller_manager:
       type: position_controllers/JointGroupPositionController
 """
 
-UR_CONTROL_MODE_TO_CONTROL_TYPE: dict[URControlModes, ]
+# UR_CONTROL_MODE_TO_CONTROL_TYPE: dict[URControlModes, ]

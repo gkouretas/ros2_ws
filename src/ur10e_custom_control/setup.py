@@ -22,7 +22,8 @@ setup(
     entry_points={
         'console_scripts': [
             'home_robot = ur10e_custom_control.home_robot:main',
-            'joint_velocity_test = ur10e_custom_control.joint_velocity_controller:main'
+            'joint_velocity_test = ur10e_custom_control.joint_velocity_controller:main',
+            'ur_control_qt = ur10e_custom_control.ur_control_qt:main'
         ],
     },
 )

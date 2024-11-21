@@ -17,6 +17,7 @@ from ur_dashboard_msgs.srv import (
 from ur_msgs.srv import SetIO, GetRobotSoftwareVersion
 
 class URService:
+    # TODO: getter for srv
     class DashboardClient(str, Enum):
         __namespace = "/dashboard_client"
         

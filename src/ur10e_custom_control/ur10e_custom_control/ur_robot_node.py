@@ -59,7 +59,7 @@ class URRobot(Node):
 
         self.call_service(URService.IOAndStatusController.SRV_SET_IO, set_io_req)
 
-    def send_trajectory(self, waypts, time_vec):
+    def send_trajectory(self, waypts: list[list[float]], time_vec: list[Duration]):
         """Send robot trajectory."""
         if len(waypts) != len(time_vec):
             raise Exception("waypoints vector and time vec should be same length")

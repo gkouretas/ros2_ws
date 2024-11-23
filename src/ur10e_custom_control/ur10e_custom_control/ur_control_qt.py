@@ -1,16 +1,24 @@
 import sys
 import inspect
-import ast
+import numpy as np
+import time
+
 from PyQt5.QtWidgets import *
+from PyQt5.QtCore import Qt, QTimer
+
 from typing import Optional, Callable, Any
 from ur_robot_node import URRobot
 from ur10e_typedefs import URService
+from ur10e_configs import (
+    UR_HOME_POSE, UR_JOINT_LIST
+)
 from functools import partial
+from builtin_interfaces.msg import Duration
 
 class URControlQtWindow(QMainWindow): # TODO: make ROS node
     def __init__(self):
         super().__init__()
-        
+
         self._robot: Optional[URRobot] = None
 
         # Set the main window properties
@@ -23,7 +31,7 @@ class URControlQtWindow(QMainWindow): # TODO: make ROS node
         self._launch_buttons = []
 
         self.robot_tab = self._create_tab(name = "Robot Tab", tab_create_func = self._conf_robot_tab)
-        self.service_tab = self._create_tab(name = "Service Tab", tab_create_func = self._conf_service_tab)
+        self.service_tab = self._create_tab(name = "Service Tab", tab_create_func = self.__conf_service_tab)
     
     def _create_tab(self, name: str, tab_create_func: Optional[Callable[[QLayout], None]] = None):
         _tab_widget = QWidget()
@@ -39,6 +47,7 @@ class URControlQtWindow(QMainWindow): # TODO: make ROS node
     
     def _conf_robot_tab(self, layout: QLayout) -> None:
         def __init_robot(button: QPushButton):
+            # TODO: remove need to do this
             self._robot = URRobot("ur_node")
             button.setEnabled(False) # disable button so we can't re-initialize the class
             for button in self._launch_buttons:
@@ -49,44 +58,91 @@ class URControlQtWindow(QMainWindow): # TODO: make ROS node
                 # control has been activated...
                 button.setEnabled(True)
             
-        def __send_trajectory(button: QPushButton):
+        def __send_trajectory(_):
             trajectory_kwargs = self._create_signature_kwargs_from_dialog(
                 "send_trajectory args", inspect.signature(self._robot.send_trajectory)
             )
+
             if trajectory_kwargs is not None:
-                print(f"Trajectory: {trajectory_kwargs}")
+                print(f"Configured trajectories: {trajectory_kwargs}")
                 self._robot.send_trajectory(**trajectory_kwargs)
+
+        def __home_robot(_):
+            self._robot.send_trajectory(
+                [UR_HOME_POSE], [Duration(sec = 10)], True
+            )
+
+        def __run_forward_velocity_control(_):
+            def __on_velocity_control_completion():
+                nonlocal _flag
+                _flag = False
+
+            def __velocity_control_loop():
+                nonlocal _timer, _flag
+                if not _flag: 
+                    _timer.stop()
+                    print(f"Stopped robot response: {self._robot.stop_robot()}")
+                else: 
+                    self._robot.publish_cyclic_commands()
+
+            _flag = True
+            self._robot.run_velocity_control()
+            _dialog = self._create_joint_slider_dialog(self._robot.set_velocity_by_joint_index)
+            _dialog.finished.connect(__on_velocity_control_completion)
+            
+            _timer = QTimer(self)
+            _timer.timeout.connect(__velocity_control_loop)
+            _timer.start(2)
+
+            _dialog.exec_()
+
+            print(f"Stopped robot: {self._robot.stop_robot()}")
+
 
         # Launch tab
         _launch_map: dict[QPushButton, Callable] = {
             QPushButton("INIT ROBOT", self): __init_robot,
-            QPushButton("SEND_TRAJECTORY", self): __send_trajectory
+            QPushButton("SEND TRAJECTORY", self): __send_trajectory,
+            QPushButton("HOME ROBOT", self): __home_robot,
+            QPushButton("FORWARD VELOCITY", self): __run_forward_velocity_control
         }
 
         for button, callback_func in _launch_map.items():
             button.clicked.connect(partial(callback_func, button))
             layout.addWidget(button)
 
-    def _conf_service_tab(self, layout: QLayout) -> None:
-        def __service_name(_service: URService): return str(_service).split("SRV_")[-1]
+    def __conf_service_tab(self, layout: QLayout) -> None:
+        """
+        Configure service tab for PyQt window.
+
+        Args:
+            layout (QLayout): QLayout object for tab
+        """
+        def __service_name(_service: URService): 
+            """Private function to digest the enum name for the UR service"""
+            return str(_service).split("SRV_")[-1]
+
         for service in URService.URServices:
+            # Create button, set callback for requesting the given service
             _button = QPushButton(__service_name(service), self)
             _button.clicked.connect(partial(self._request_service, service))
             _button.setEnabled(False) # disable until launch is initiated
+
             self._launch_buttons.append(_button)
             layout.addWidget(_button)
 
     def _request_service(self, service: URService.URServiceType): 
-        _service = URService._UR_SERVICE_MAP.get(service)
-        _fields_and_field_types = _service.Request.get_fields_and_field_types()
+        _service_type = URService.get_service_type(service)
+        assert _service_type is not None, f"Unknown service: {service}"
+
+        _fields_and_field_types = _service_type.Request.get_fields_and_field_types()
         if _fields_and_field_types == {}:
-            print(_service.Request())
-            print(f"Request return: {self._robot.call_service(service, _service.Request())}")
+            print(f"Request return: {self._robot.call_service(service, _service_type.Request())}")
         else:
             service_kwargs = self._create_service_kwargs_from_dialog(service, _fields_and_field_types)
             if service_kwargs is not None:
-                print(_service.Request(**service_kwargs))
-                print(f"Request return: {self._robot.call_service(service, _service.Request(**service_kwargs))}")
+                print(_service_type.Request(**service_kwargs))
+                print(f"Request return: {self._robot.call_service(service, _service_type.Request(**service_kwargs))}")
 
     def _create_signature_kwargs_from_dialog(self, name: str, signature: inspect.Signature):
         if signature.parameters == {}:
@@ -183,6 +239,46 @@ class URControlQtWindow(QMainWindow): # TODO: make ROS node
             # Service request canceled
             return None
     
+    def _create_joint_slider_dialog(self, joint_update_callback: Callable[[float, int], None]) -> QDialog:
+        _dialog = QDialog()
+        _layout = QGridLayout()
+
+        def __map_slider_to_spinbox(__spinbox: QDoubleSpinBox, __joint_index: int, __joint_update_callback: Callable[[float, int], None], value: int):
+            __joint_angle = (value - 50) * np.pi / 100
+            __spinbox.setValue(__joint_angle)
+            __joint_update_callback(__joint_angle, __joint_index)
+
+        def __map_spinbox_to_slider(__slider: QSlider, value: float):
+            __slider.setValue(int(value / (np.pi / 100)) + 50)
+
+        for joint_index, joint_label in enumerate(UR_JOINT_LIST):
+            _layout.addWidget(QLabel(joint_label), joint_index, 0)
+
+            _slider = QSlider(Qt.Horizontal)
+
+            # TODO: joint limits
+            _slider.setMinimum(0)
+            _slider.setMaximum(100)
+
+            _spinbox = QDoubleSpinBox()
+            _spinbox.setMinimum(-np.pi/2)
+            _spinbox.setMaximum(np.pi/2)
+            _spinbox.setSingleStep(np.pi / 100)
+
+            # TODO: set initial values to actual values?
+            _slider.setValue(50)
+            _spinbox.setValue(0.0)
+
+            # Callback to joint update callback
+            _slider.valueChanged.connect(partial(__map_slider_to_spinbox, _spinbox, joint_index, joint_update_callback))
+            _spinbox.valueChanged.connect(partial(__map_spinbox_to_slider, _slider))
+
+            _layout.addWidget(_slider, joint_index, 1)
+            _layout.addWidget(_spinbox, joint_index, 2)
+
+        _dialog.setLayout(_layout)
+        return _dialog
+
     def _typed_data(self, text: str, field_type: str):
         _INT_TYPE = ('int8', 'uint8', 'int16', 'uint16', 'int32', 'uint32', 'int64', 'uint64')
         _FLOAT_TYPE = ('float', 'double')
@@ -205,7 +301,6 @@ class URControlQtWindow(QMainWindow): # TODO: make ROS node
         elif field_type in _FLOAT_TYPE:
             return float(text)
         elif "Duration" in field_type:
-            from builtin_interfaces.msg import Duration
             return Duration(
                 sec = int(float(text)), 
                 nanosec = int((float(text) - int(float(text))) * 1e9)

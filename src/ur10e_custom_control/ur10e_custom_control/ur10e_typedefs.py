@@ -1,10 +1,10 @@
-from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
+
 from rclpy.node import Node
 from rclpy.client import Client
 
 from std_srvs.srv import Trigger
-from ur_dashboard_msgs.msg import RobotMode
 
 from controller_manager_msgs.srv import ListControllers, SwitchController
 from ur_dashboard_msgs.srv import (
@@ -79,8 +79,12 @@ class URService:
     URServices: tuple[URServiceType] = tuple(_UR_SERVICE_MAP.keys())
 
     @classmethod
-    def init_service(cls, node: Node, service: URServiceType, timeout: int) -> Client:
-        ur_service_type = cls._UR_SERVICE_MAP.get(service)
+    def get_service_type(cls, service: URServiceType) -> Optional[type]:
+        return cls._UR_SERVICE_MAP.get(service)
+
+    @classmethod
+    def init_service(cls, node: Node, service: URServiceType, timeout: float) -> Client:
+        ur_service_type = cls.get_service_type(service)
         if ur_service_type is None:
             raise TypeError(f"{service} is not a valid service")
         

@@ -1,9 +1,6 @@
+import numpy as np
+
 from enum import Enum
-from control_msgs.action import FollowJointTrajectory
-from std_msgs.msg._float64_multi_array import Float64MultiArray
-from ur10e_typedefs import (
-    URService,
-)
 
 UR10E_FORCE_TORQUE_NODE = "tcp_fts_sensor"
 UR10E_FORCE_PUBLISHER = "force"
@@ -19,6 +16,12 @@ UR_JOINT_LIST: list[str] = [
     "wrist_2_joint",
     "wrist_3_joint",
 ]
+
+UR_HOME_POSE = [0.0, np.radians(-90.0), 0.0, np.radians(-90.0), 0.0, 0.0]
+
+# Control mode types
+from control_msgs.action import FollowJointTrajectory
+from std_msgs.msg._float64_multi_array import Float64MultiArray
 
 class URControlModes(str, Enum):
     JOINT_TRAJECTORY = "joint_trajectory_controller"
@@ -53,6 +56,10 @@ class URControlModes(str, Enum):
             return "/" + self.value + "/commands"
         else:
             return None
+        
+    @property
+    def is_cyclic(self) -> bool:
+        return self.value == self.FORWARD_VELOCITY or self.value == self.FORWARD_POSITION
 
 """
 controller_manager:

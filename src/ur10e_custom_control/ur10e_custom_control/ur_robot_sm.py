@@ -28,7 +28,7 @@ class URRobotSM(URRobot):
         self._goal = SetMode.Goal()
 
         # Result seemingly not implemented in ServerGoalGHandle methods, so unused
-        # self._result = SetMode.Result()
+        self._result = SetMode.Result()
         
         self._feedback = SetMode.Feedback()
         self._current_goal_handle: ServerGoalHandle = None
@@ -81,6 +81,7 @@ class URRobotSM(URRobot):
             node = self,
             action_type = SetMode,
             action_name = "set_mode",
+            execute_callback = self._set_mode_execute_callback,
             goal_callback = self._set_mode_goal_callback,
             cancel_callback = self._set_mode_cancel_callback,
             handle_accepted_callback = self._set_mode_accept_callback
@@ -92,6 +93,10 @@ class URRobotSM(URRobot):
     def _set_mode_cancel_callback(self, _):
         return CancelResponse.REJECT
 
+    def _set_mode_execute_callback(self, goal_handle: ServerGoalHandle):
+        self._set_mode_execute(goal_handle)
+        return self._result
+
     def _set_mode_accept_callback(self, goal_handle: ServerGoalHandle):
         # TODO: dispatch thread?
         self._set_mode_execute(goal_handle)
@@ -102,6 +107,8 @@ class URRobotSM(URRobot):
         self._goal: SetMode.Goal = goal_handle.request
 
         if self._is_illegal_mode(self._goal.target_robot_mode):
+            self._result.message = "Requested illegal mode"
+            self._result.success = False
             self.get_logger().error(f"Target mode illegal: {self._goal.target_robot_mode}")
             self._current_goal_handle.abort()
         else:
@@ -122,9 +129,13 @@ class URRobotSM(URRobot):
                 or _mode == RobotMode.BOOTING \
                 or _mode == RobotMode.BACKDRIVE \
                 or _mode == RobotMode.UPDATING_FIRMWARE:
+                    self._result.message = f"Selected target mode {_mode} that cannot be explicitly set"
+                    self._result.success = False
                     self.get_logger().error(f"Selected target mode {_mode} that cannot be explicitly set")
                     self._current_goal_handle.abort()
             else:
+                self._result.message = f"Illegal mode: {_mode}"
+                self._result.success = False
                 self.get_logger().error(f"Illegal mode: {_mode}")
                 self._current_goal_handle.abort()
 
@@ -162,6 +173,8 @@ class URRobotSM(URRobot):
                     self._do_transition()
             elif self._current_robot_mode.mode == self._goal.target_robot_mode:
                 self._in_action = False
+                self._result.success = True
+                self._result.message = "Reached target robot mode"
                 self.get_logger().info("Reached target robot mode")
 
                 if self._current_robot_mode == RobotMode.RUNNING \
@@ -171,6 +184,8 @@ class URRobotSM(URRobot):
                 
                 self._current_goal_handle.succeed()
             else:
+                self._result.success = False
+                self._result.message = f"Robot reached higher mode {self._current_robot_mode} than requested {self._goal.target_robot_mode} during recovery"
                 self.get_logger().error(f"Robot reached higher mode {self._current_robot_mode} than requested {self._goal.target_robot_mode} during recovery")
                 self._current_goal_handle.abort()
 

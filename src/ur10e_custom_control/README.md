@@ -26,4 +26,9 @@ docker network rm ursim_net
 systemctl status docker
 sudo systemctl start docker
 
+Cleanup docker (fallback in race condition...)
+```bash
+sudo docker network disconnect -f ursim_net ursim
+sudo systemctl restart docker.socket docker.service; sudo docker rm $(sudo docker ps -a -q) -f
+```
 ros2 run ur_client_library start_ursim.sh -a 192.168.57 -m ur10e -v 5.9.4 headless:=true && ros2 launch ur_robot_driver ur10e.launch.py robot_ip:=192.168.57.101 headless_mode:=true && ros2 launch ur_robot_driver test_scaled_joint_trajectory_controller.launch.py

@@ -15,40 +15,45 @@ from ur10e_typedefs import URService
 
 from ur10e_configs import (
     UR_JOINT_LIST, 
-    UR_QOS_PROFILE,
-    URControlModes,
-    Float64MultiArray
+    UR_QOS_PROFILE
 )
 
-from typing import Iterable, Optional
+from ur10e_typedefs import (
+    URControlModes
+)
+
+from typing import Optional
 
 _DEFAULT_SERVICE_TIMEOUT_SEC = 10
 _DEFAULT_ACTION_TIMEOUT_SEC = 10
 
 class URRobot(Node):
-    def __init__(self, node_name: str, initial_services: Iterable[URService] = [], **kwargs) -> None:
+    def __init__(self, node_name: str, **kwargs) -> None:
         super().__init__(node_name, **kwargs)
 
-        self.service_clients: dict[URService, Optional[Client]] = {
+        self.service_clients: dict[URService.URServiceType, Optional[Client]] = {
             k: None for k in URService.URServices
         }
 
-        for service in initial_services:
-            assert service in self.service_clients.keys(), f"Invalid service: {service}"
-            self.service_clients[service] = URService.init_service(self, service, _DEFAULT_SERVICE_TIMEOUT_SEC)
-
-        self.jtc_action_clients: dict[URControlModes, ActionClient] = {mode: None for mode in URControlModes}
-        # self.jtc_action_clients[URControlModes.SCALED_JOINT_TRAJECTORY] = self.wait_for_action(
-        #     "/scaled_joint_trajectory_controller/follow_joint_trajectory",
-        #     FollowJointTrajectory,
-        # )
-
+        self.jtc_action_clients: dict[URControlModes, ActionClient] = \
+            {mode: None for mode in URControlModes if mode.has_action_client}
+        
         self._cyclic_publishers: dict[URControlModes, Publisher] = \
             {mode: None for mode in URControlModes if mode.is_cyclic}
         
         self._control_msg: dict[URControlModes, type] = \
             {mode: mode.publish_topic() for mode in URControlModes if mode.is_cyclic}
 
+    def initialize_service(self, srv: URService.URServiceType) -> None:
+        if self.service_clients[srv] is not None: 
+            self.get_logger().info(f"Already have defined service for {srv}, ignoring")
+        else:
+            self.service_clients[srv] = URService.init_service(
+                self, 
+                srv,
+                timeout = _DEFAULT_SERVICE_TIMEOUT_SEC
+            )
+            
     def wait_for_action(self, action_name: str, action_type: type, timeout: int =_DEFAULT_ACTION_TIMEOUT_SEC):
         client = ActionClient(self, action_type, action_name)
         if client.wait_for_server(timeout) is False:
@@ -59,11 +64,16 @@ class URRobot(Node):
         self.get_logger().info(f"Successfully connected to action '{action_name}'")
         return client
     
-    def call_service(self, srv: URService, request: SrvTypeRequest):
+    def call_service(self, srv: URService.URServiceType, request: SrvTypeRequest):
         service = self.service_clients.get(srv)
+        
         if service is None:
             self.service_clients[srv] = URService.init_service(self, srv, _DEFAULT_SERVICE_TIMEOUT_SEC)
             service = self.service_clients[srv]
+        if request is None:
+            request: SrvTypeRequest = URService.get_service_type(srv)
+            assert request is not None, "Unable to get service type"
+            request = request.Request()
 
         future: Future = service.call_async(request)
         rclpy.spin_until_future_complete(self, future)
@@ -107,7 +117,7 @@ class URRobot(Node):
             Trigger.Request()
         )
 
-    def send_trajectory(self, waypts: list[list[float]], time_vec: list[Duration], blocking: bool = False):
+    def send_trajectory(self, waypts: list[list[float]], time_vec: list[Duration], blocking: bool = True):
         """Send robot trajectory."""
         if len(waypts) != len(time_vec):
             raise Exception("waypoints vector and time vec should be same length")
@@ -124,20 +134,35 @@ class URRobot(Node):
             joint_trajectory.points.append(point)
 
         # Sending trajectory goal
-        # TODO: make non-blocking
+        if self.jtc_action_clients[URControlModes.SCALED_JOINT_TRAJECTORY] is None:
+            self.jtc_action_clients[URControlModes.SCALED_JOINT_TRAJECTORY] = \
+                self.wait_for_action(URControlModes.SCALED_JOINT_TRAJECTORY.action_type_topic, URControlModes.SCALED_JOINT_TRAJECTORY.action_type)
+        
         goal_response = self.call_action(
             self.jtc_action_clients[URControlModes.SCALED_JOINT_TRAJECTORY], FollowJointTrajectory.Goal(trajectory = joint_trajectory), blocking = True
         )
+
         if not goal_response.accepted:
             raise Exception("trajectory was not accepted")
 
         # Verify execution
+        # TODO: make option for non-blocking
         if blocking:
             result: FollowJointTrajectory.Result = self.get_result(self.jtc_action_clients[URControlModes.SCALED_JOINT_TRAJECTORY], goal_response)
             return result.error_code == FollowJointTrajectory.Result.SUCCESSFUL
         else:
             # TODO: return future
             raise RuntimeError("Non-blocking support for now...")
+
+    def run_position_control(self):
+        if self._cyclic_publishers[URControlModes.FORWARD_POSITION] is None:
+            self._cyclic_publishers[URControlModes.FORWARD_POSITION] = \
+                self._create_controller_publisher(
+                    URControlModes.FORWARD_POSITION
+                )
+            
+        # TODO: get current position
+        self._control_msg[URControlModes.FORWARD_POSITION].data = [0.0] * len(UR_JOINT_LIST)
 
     def run_velocity_control(self):
         # self.set_controllers(controllers = [URControlModes.FORWARD_VELOCITY])
@@ -149,19 +174,13 @@ class URRobot(Node):
                 )
             
         self._control_msg[URControlModes.FORWARD_VELOCITY].data = [0.0] * len(UR_JOINT_LIST)
-
-        # if self.jtc_action_clients[URControlModes.FORWARD_VELOCITY] is None:
-        #     self.jtc_action_clients[URControlModes.FORWARD_VELOCITY] = self.wait_for_action(
-        #         URControlModes.FORWARD_VELOCITY.value,
-        #         URControlModes.FORWARD_VELOCITY.action_type
-        #     )
         
     def publish_cyclic_commands(self):
         for mode in self._cyclic_publishers.keys():
             if self._cyclic_publishers[mode] is not None:
                 msg = mode.publish_topic()
                 msg = self._control_msg[mode]
-                # self.get_logger().info(f"Publishing: {msg}")
+                self.get_logger().info(f"Publishing: {msg} for {mode} from {self._cyclic_publishers[mode]}")
                 self._cyclic_publishers[mode].publish(msg)
 
     def _create_controller_publisher(self, control_mode: URControlModes):
@@ -171,6 +190,15 @@ class URRobot(Node):
             UR_QOS_PROFILE
         )
     
+    def set_position(self, x: list[float]):
+        # TODO: mutex
+        self._control_msg[URControlModes.FORWARD_POSITION].data = x
+
+    def set_position_by_joint_index(self, x: float, index: int):
+        # TODO: mutex
+        assert index >= 0 and index < len(UR_JOINT_LIST), f"Invalid joint index: {index}"
+        self._control_msg[URControlModes.FORWARD_POSITION].data[index] = x
+
     def set_velocity(self, v: list[float]):
         # TODO: mutex
         self._control_msg[URControlModes.FORWARD_VELOCITY].data = v

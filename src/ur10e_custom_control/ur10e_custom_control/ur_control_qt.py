@@ -1,17 +1,17 @@
 import sys
 import inspect
 import numpy as np
-import time
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt, QTimer
 
 from typing import Optional, Callable, Any
-from ur_robot_node import URRobot
+from ur_robot_sm import URRobotSM
 from ur10e_typedefs import URService
 from ur10e_configs import (
     UR_HOME_POSE, UR_JOINT_LIST
 )
+
 from functools import partial
 from builtin_interfaces.msg import Duration
 
@@ -19,7 +19,7 @@ class URControlQtWindow(QMainWindow): # TODO: make ROS node
     def __init__(self):
         super().__init__()
 
-        self._robot: Optional[URRobot] = None
+        self._robot: Optional[URRobotSM] = None
 
         # Set the main window properties
         self.setWindowTitle("UR Control Node")
@@ -48,7 +48,7 @@ class URControlQtWindow(QMainWindow): # TODO: make ROS node
     def _conf_robot_tab(self, layout: QLayout) -> None:
         def __init_robot(button: QPushButton):
             # TODO: remove need to do this
-            self._robot = URRobot("ur_node")
+            self._robot = URRobotSM("ur_node")
             button.setEnabled(False) # disable button so we can't re-initialize the class
             for button in self._launch_buttons:
                 # Now that robot node is active, we can enable services
@@ -72,6 +72,32 @@ class URControlQtWindow(QMainWindow): # TODO: make ROS node
                 [UR_HOME_POSE], [Duration(sec = 10)], True
             )
 
+        def __run_forward_position_control(_):
+            def __on_position_control_completion():
+                nonlocal _flag
+                _flag = False
+
+            def __position_control_loop():
+                nonlocal _timer, _flag
+                if not _flag: 
+                    _timer.stop()
+                    print(f"Stopped robot response: {self._robot.stop_robot()}")
+                else: 
+                    self._robot.publish_cyclic_commands()
+
+            _flag = True
+            self._robot.run_position_control()
+            _dialog = self._create_joint_slider_dialog(self._robot.set_position_by_joint_index, -np.pi/2, np.pi/2, np.pi/100)
+            _dialog.finished.connect(__on_position_control_completion)
+            
+            _timer = QTimer(self)
+            _timer.timeout.connect(__position_control_loop)
+            _timer.start(2)
+
+            _dialog.exec_()
+
+            print(f"Stopped robot: {self._robot.stop_robot()}")
+
         def __run_forward_velocity_control(_):
             def __on_velocity_control_completion():
                 nonlocal _flag
@@ -87,7 +113,7 @@ class URControlQtWindow(QMainWindow): # TODO: make ROS node
 
             _flag = True
             self._robot.run_velocity_control()
-            _dialog = self._create_joint_slider_dialog(self._robot.set_velocity_by_joint_index)
+            _dialog = self._create_joint_slider_dialog(self._robot.set_velocity_by_joint_index, -np.pi/2, np.pi/2, np.pi/100)
             _dialog.finished.connect(__on_velocity_control_completion)
             
             _timer = QTimer(self)
@@ -104,6 +130,7 @@ class URControlQtWindow(QMainWindow): # TODO: make ROS node
             QPushButton("INIT ROBOT", self): __init_robot,
             QPushButton("SEND TRAJECTORY", self): __send_trajectory,
             QPushButton("HOME ROBOT", self): __home_robot,
+            QPushButton("FORWARD POSITION", self): __run_forward_position_control,
             QPushButton("FORWARD VELOCITY", self): __run_forward_velocity_control
         }
 
@@ -239,17 +266,35 @@ class URControlQtWindow(QMainWindow): # TODO: make ROS node
             # Service request canceled
             return None
     
-    def _create_joint_slider_dialog(self, joint_update_callback: Callable[[float, int], None]) -> QDialog:
+    def _create_joint_slider_dialog(self, joint_update_callback: Callable[[float, int], None], min_val: float = 0.0, max_val: float = 100.0, val_step: float = 1.0) -> QDialog:
         _dialog = QDialog()
         _layout = QGridLayout()
 
+        _range = (max_val - min_val)
+        _half = (max_val - min_val) / 2
+        _middle = (max_val + min_val) / 2
+
+        def __map(x, in_min, in_max, out_min, out_max):
+            return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
         def __map_slider_to_spinbox(__spinbox: QDoubleSpinBox, __joint_index: int, __joint_update_callback: Callable[[float, int], None], value: int):
-            __joint_angle = (value - 50) * np.pi / 100
+            __joint_angle = __map(value, 0, 100, min_val, max_val)
             __spinbox.setValue(__joint_angle)
             __joint_update_callback(__joint_angle, __joint_index)
 
         def __map_spinbox_to_slider(__slider: QSlider, value: float):
-            __slider.setValue(int(value / (np.pi / 100)) + 50)
+            """
+            Map spinbox value to slider value
+
+            Args:
+                __slider (QSlider): QSlider object
+                value (float): Value from spinbox object. Will be (min_val, max_val)
+            """
+
+            # [slider] = ([spinbox] - [spinbox]) * [slider/spinbox]
+            __slider.setValue(
+                int(__map(value, min_val, max_val, 0, 100))
+            )
 
         for joint_index, joint_label in enumerate(UR_JOINT_LIST):
             _layout.addWidget(QLabel(joint_label), joint_index, 0)
@@ -259,15 +304,16 @@ class URControlQtWindow(QMainWindow): # TODO: make ROS node
             # TODO: joint limits
             _slider.setMinimum(0)
             _slider.setMaximum(100)
+            _slider.setSingleStep(1)
 
             _spinbox = QDoubleSpinBox()
-            _spinbox.setMinimum(-np.pi/2)
-            _spinbox.setMaximum(np.pi/2)
-            _spinbox.setSingleStep(np.pi / 100)
+            _spinbox.setMinimum(min_val)
+            _spinbox.setMaximum(max_val)
+            _spinbox.setSingleStep(val_step)
 
             # TODO: set initial values to actual values?
             _slider.setValue(50)
-            _spinbox.setValue(0.0)
+            _spinbox.setValue(_middle)
 
             # Callback to joint update callback
             _slider.valueChanged.connect(partial(__map_slider_to_spinbox, _spinbox, joint_index, joint_update_callback))

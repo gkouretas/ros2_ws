@@ -1,5 +1,6 @@
 import time
 
+from rclpy.node import Node
 from ur10e_typedefs import URService
 from ur_robot_node import URRobot
 from rclpy.subscription import Subscription
@@ -11,7 +12,7 @@ from ur_dashboard_msgs.action import SetMode
 from ur10e_configs import UR_QOS_PROFILE
 
 class URRobotSM(URRobot):
-    def __init__(self, node_name: str, **kwargs) -> None:
+    def __init__(self, node: Node | None = None, **kwargs) -> None:
         """
         Python implementation `robot_state_helper` developed on https://github.com/UniversalRobots/Universal_Robots_ROS2_Driver/pull/933
         
@@ -20,7 +21,7 @@ class URRobotSM(URRobot):
         Args:
             node_name (str): Node name
         """
-        super().__init__(node_name, **kwargs)
+        super().__init__(node, **kwargs)
 
         self._in_action = False
         self._current_robot_mode = RobotMode.NO_CONTROLLER
@@ -34,14 +35,14 @@ class URRobotSM(URRobot):
         self._current_goal_handle: ServerGoalHandle = None
         self._set_mode_action_server: ActionServer = None
 
-        self._robot_state_sub: Subscription = self.create_subscription(
+        self._robot_state_sub: Subscription = self._node.create_subscription(
             msg_type = RobotMode,
             topic = "/io_and_status_controller/robot_mode",
             callback = self._robot_mode_callback,
             qos_profile = UR_QOS_PROFILE
         )
 
-        self._safety_mode_sub: Subscription = self.create_subscription(
+        self._safety_mode_sub: Subscription = self._node.create_subscription(
             msg_type = SafetyMode,
             topic = "/io_and_status_controller/safety_mode",
             callback = self._safety_mode_callback,
@@ -78,7 +79,7 @@ class URRobotSM(URRobot):
 
     def _start_set_mode_action_server(self):
         self._set_mode_action_server = ActionServer(
-            node = self,
+            node = self._node,
             action_type = SetMode,
             action_name = "set_mode",
             execute_callback = self._set_mode_execute_callback,
@@ -109,17 +110,17 @@ class URRobotSM(URRobot):
         if self._is_illegal_mode(self._goal.target_robot_mode):
             self._result.message = "Requested illegal mode"
             self._result.success = False
-            self.get_logger().error(f"Target mode illegal: {self._goal.target_robot_mode}")
+            self._node.get_logger().error(f"Target mode illegal: {self._goal.target_robot_mode}")
             self._current_goal_handle.abort()
         else:
-            self.get_logger().info(f"Target mode: {self._goal.target_robot_mode}")
+            self._node.get_logger().info(f"Target mode: {self._goal.target_robot_mode}")
             _mode = RobotMode(mode = self._goal.target_robot_mode)
             if _mode == RobotMode.POWER_OFF \
                 or _mode == RobotMode.IDLE \
                 or _mode == RobotMode.RUNNING:
                     if self._current_robot_mode != _mode or self._current_safety_mode > SafetyMode.REDUCED:
                         if self._goal.stop_program:
-                            self.get_logger().info(f"Stop request: {self.call_service(URService.DashboardClient.SRV_STOP)}")
+                            self._node.get_logger().info(f"Stop request: {self.call_service(URService.DashboardClient.SRV_STOP)}")
                         self._do_transition()
                     else:
                         self._update_robot_state()
@@ -131,17 +132,17 @@ class URRobotSM(URRobot):
                 or _mode == RobotMode.UPDATING_FIRMWARE:
                     self._result.message = f"Selected target mode {_mode} that cannot be explicitly set"
                     self._result.success = False
-                    self.get_logger().error(f"Selected target mode {_mode} that cannot be explicitly set")
+                    self._node.get_logger().error(f"Selected target mode {_mode} that cannot be explicitly set")
                     self._current_goal_handle.abort()
             else:
                 self._result.message = f"Illegal mode: {_mode}"
                 self._result.success = False
-                self.get_logger().error(f"Illegal mode: {_mode}")
+                self._node.get_logger().error(f"Illegal mode: {_mode}")
                 self._current_goal_handle.abort()
 
     def _robot_mode_callback(self, msg: RobotMode):
         if self._current_robot_mode != msg:
-            self.get_logger().info(f"Robot mode {self._current_robot_mode} -> {msg}")
+            self._node.get_logger().info(f"Robot mode {self._current_robot_mode} -> {msg}")
             self._current_robot_mode = msg
 
             if self._in_action:
@@ -151,7 +152,7 @@ class URRobotSM(URRobot):
 
     def _safety_mode_callback(self, msg: SafetyMode):
         if self._current_safety_mode != msg:
-            self.get_logger().info(f"Safety mode {self._current_safety_mode} -> {msg}")
+            self._node.get_logger().info(f"Safety mode {self._current_safety_mode} -> {msg}")
             self._current_safety_mode = msg
 
             self._update_robot_state()
@@ -169,13 +170,13 @@ class URRobotSM(URRobot):
 
             if self._current_robot_mode.mode < self._goal.target_robot_mode \
                 or self._current_safety_mode.mode > SafetyMode.REDUCED:
-                    self.get_logger().debug(f"Current mode: {self._current_robot_mode.mode}, target mode: {self._goal.target_robot_mode}")
+                    self._node.get_logger().debug(f"Current mode: {self._current_robot_mode.mode}, target mode: {self._goal.target_robot_mode}")
                     self._do_transition()
             elif self._current_robot_mode.mode == self._goal.target_robot_mode:
                 self._in_action = False
                 self._result.success = True
                 self._result.message = "Reached target robot mode"
-                self.get_logger().info("Reached target robot mode")
+                self._node.get_logger().info("Reached target robot mode")
 
                 if self._current_robot_mode == RobotMode.RUNNING \
                     and self._goal.target_robot_mode == self._goal.play_program:
@@ -186,35 +187,35 @@ class URRobotSM(URRobot):
             else:
                 self._result.success = False
                 self._result.message = f"Robot reached higher mode {self._current_robot_mode} than requested {self._goal.target_robot_mode} during recovery"
-                self.get_logger().error(f"Robot reached higher mode {self._current_robot_mode} than requested {self._goal.target_robot_mode} during recovery")
+                self._node.get_logger().error(f"Robot reached higher mode {self._current_robot_mode} than requested {self._goal.target_robot_mode} during recovery")
                 self._current_goal_handle.abort()
 
     def _do_transition(self):
         if self._goal.target_robot_mode < self._current_robot_mode.mode:
-            self.get_logger().error(f"Target mode lower {self._goal.target_robot_mode} than current mode {self._current_robot_mode.mode}, powering off...")
-            self.get_logger().info(f"Power off response: {self.call_service(URService.DashboardClient.SRV_POWER_OFF)}")
+            self._node.get_logger().error(f"Target mode lower {self._goal.target_robot_mode} than current mode {self._current_robot_mode.mode}, powering off...")
+            self._node.get_logger().info(f"Power off response: {self.call_service(URService.DashboardClient.SRV_POWER_OFF)}")
         else:
             if self._current_safety_mode == SafetyMode.PROTECTIVE_STOP:
-                self.get_logger().info(f"Unlock protective stop response: {self.call_service(URService.DashboardClient.SRV_UNLOCK_PROTECTIVE_STOP)}")
+                self._node.get_logger().info(f"Unlock protective stop response: {self.call_service(URService.DashboardClient.SRV_UNLOCK_PROTECTIVE_STOP)}")
             elif self._current_safety_mode == SafetyMode.SYSTEM_EMERGENCY_STOP or self._current_safety_mode == SafetyMode.ROBOT_EMERGENCY_STOP:
-                self.get_logger().warning(f"The robot is currently in safety mode {self._current_safety_mode}, release EM-STOP / clear error")
+                self._node.get_logger().warning(f"The robot is currently in safety mode {self._current_safety_mode}, release EM-STOP / clear error")
             elif self._current_safety_mode == SafetyMode.VIOLATION or self._current_safety_mode == SafetyMode.FAULT:
-                self.get_logger().info(f"Restart safety response: {self.call_service(URService.DashboardClient.SRV_RESTART_SAFETY)}")
+                self._node.get_logger().info(f"Restart safety response: {self.call_service(URService.DashboardClient.SRV_RESTART_SAFETY)}")
             else:
                 if self._current_robot_mode == RobotMode.CONFIRM_SAFETY:
-                    self.get_logger().warning(f"The robot is currently in mode {self._current_robot_mode}, you must interact with the pendant")
+                    self._node.get_logger().warning(f"The robot is currently in mode {self._current_robot_mode}, you must interact with the pendant")
                 elif self._current_robot_mode == RobotMode.BOOTING:
-                    self.get_logger().info(f"The robot is currently in mode {self._current_robot_mode}, wait until it is booted")
+                    self._node.get_logger().info(f"The robot is currently in mode {self._current_robot_mode}, wait until it is booted")
                 elif self._current_robot_mode == RobotMode.POWER_OFF:
-                    self.get_logger().info(f"Power off service response: {self.call_service(URService.DashboardClient.SRV_POWER_OFF)}")
+                    self._node.get_logger().info(f"Power off service response: {self.call_service(URService.DashboardClient.SRV_POWER_OFF)}")
                 elif self._current_robot_mode == RobotMode.POWER_ON:
-                    self.get_logger().info(f"The robot is currently in mode {self._current_robot_mode}, wait until robot is in IDLE mode")
+                    self._node.get_logger().info(f"The robot is currently in mode {self._current_robot_mode}, wait until robot is in IDLE mode")
                 elif self._current_robot_mode == RobotMode.BACKDRIVE:
-                    self.get_logger().info(f"The robot is currently in mode {self._current_robot_mode}, it will return to IDLE mode in the next state")
+                    self._node.get_logger().info(f"The robot is currently in mode {self._current_robot_mode}, it will return to IDLE mode in the next state")
                 elif self._current_robot_mode == RobotMode.RUNNING:
-                    self.get_logger().info(f"The robot is operational (mode {self._current_robot_mode})")
+                    self._node.get_logger().info(f"The robot is operational (mode {self._current_robot_mode})")
                 else:
-                    self.get_logger().warning(f"The robot is currently in mode {self._current_robot_mode}. There are no configured actions for this state.")
+                    self._node.get_logger().warning(f"The robot is currently in mode {self._current_robot_mode}. There are no configured actions for this state.")
 
     def _is_illegal_mode(self, mode: int) -> bool:
         return mode > 8 or mode < -1

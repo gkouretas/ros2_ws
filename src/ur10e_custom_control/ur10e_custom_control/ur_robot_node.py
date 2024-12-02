@@ -27,9 +27,12 @@ from typing import Optional
 _DEFAULT_SERVICE_TIMEOUT_SEC = 10
 _DEFAULT_ACTION_TIMEOUT_SEC = 10
 
-class URRobot(Node):
-    def __init__(self, node_name: str, **kwargs) -> None:
-        super().__init__(node_name, **kwargs)
+class URRobot:
+    def __init__(self, node: Optional[Node] = None, **kwargs) -> None:
+        if node is None:
+            self._node = Node(**kwargs)
+        else:
+            self._node = node
 
         self.service_clients: dict[URService.URServiceType, Optional[Client]] = {
             k: None for k in URService.URServices
@@ -46,29 +49,29 @@ class URRobot(Node):
 
     def initialize_service(self, srv: URService.URServiceType) -> None:
         if self.service_clients[srv] is not None: 
-            self.get_logger().info(f"Already have defined service for {srv}, ignoring")
+            self._node.get_logger().info(f"Already have defined service for {srv}, ignoring")
         else:
             self.service_clients[srv] = URService.init_service(
-                self, 
+                self._node, 
                 srv,
                 timeout = _DEFAULT_SERVICE_TIMEOUT_SEC
             )
             
     def wait_for_action(self, action_name: str, action_type: type, timeout: int =_DEFAULT_ACTION_TIMEOUT_SEC):
-        client = ActionClient(self, action_type, action_name)
+        client = ActionClient(self._node, action_type, action_name)
         if client.wait_for_server(timeout) is False:
             raise Exception(
                 f"Could not reach action server '{action_name}' within timeout of {timeout}"
             )
 
-        self.get_logger().info(f"Successfully connected to action '{action_name}'")
+        self._node.get_logger().info(f"Successfully connected to action '{action_name}'")
         return client
     
     def call_service(self, srv: URService.URServiceType, request: SrvTypeRequest):
         service = self.service_clients.get(srv)
         
         if service is None:
-            self.service_clients[srv] = URService.init_service(self, srv, _DEFAULT_SERVICE_TIMEOUT_SEC)
+            self.service_clients[srv] = URService.init_service(self._node, srv, _DEFAULT_SERVICE_TIMEOUT_SEC)
             service = self.service_clients[srv]
         if request is None:
             request: SrvTypeRequest = URService.get_service_type(srv)
@@ -76,7 +79,7 @@ class URRobot(Node):
             request = request.Request()
 
         future: Future = service.call_async(request)
-        rclpy.spin_until_future_complete(self, future)
+        rclpy.spin_until_future_complete(self._node, future)
         if future.result() is not None:
             return future.result()
         else:
@@ -85,7 +88,7 @@ class URRobot(Node):
     def call_action(self, ac_client: ActionClient, goal, blocking: bool):
         future = ac_client.send_goal_async(goal)
         if blocking:
-            rclpy.spin_until_future_complete(self, future)
+            rclpy.spin_until_future_complete(self._node, future)
         else:
             future.add_done_callback(self.get_result_callback)
 
@@ -96,7 +99,7 @@ class URRobot(Node):
 
     def get_result(self, ac_client: ActionClient, goal_response):
         future_res = ac_client._get_result_async(goal_response)
-        rclpy.spin_until_future_complete(self, future_res)
+        rclpy.spin_until_future_complete(self._node, future_res)
         if future_res.result() is not None:
             return future_res.result().result
         else:
@@ -143,7 +146,7 @@ class URRobot(Node):
         )
 
         if not goal_response.accepted:
-            raise Exception("trajectory was not accepted")
+            raise Exception(f"Trajectory was not accepted: {goal_response}")
 
         # Verify execution
         # TODO: make option for non-blocking
@@ -180,11 +183,11 @@ class URRobot(Node):
             if self._cyclic_publishers[mode] is not None:
                 msg = mode.publish_topic()
                 msg = self._control_msg[mode]
-                self.get_logger().info(f"Publishing: {msg} for {mode} from {self._cyclic_publishers[mode]}")
+                self._node.get_logger().info(f"Publishing: {msg} for {mode} from {self._cyclic_publishers[mode]}")
                 self._cyclic_publishers[mode].publish(msg)
 
     def _create_controller_publisher(self, control_mode: URControlModes):
-        return self.create_publisher(
+        return self._node.create_publisher(
             control_mode.publish_topic, 
             control_mode.publish_topic_name, 
             UR_QOS_PROFILE

@@ -1,6 +1,10 @@
 import sys
 import inspect
 import numpy as np
+import threading
+
+import rclpy
+from rclpy.subscription import Subscription
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt, QTimer
@@ -12,15 +16,19 @@ from ur10e_configs import (
     UR_HOME_POSE, UR_JOINT_LIST
 )
 
+from rclpy.node import Node
+
 from functools import partial
 from builtin_interfaces.msg import Duration
 
 class URControlQtWindow(QMainWindow): # TODO: make ROS node
-    def __init__(self):
+    def __init__(self, node: Node):
         super().__init__()
 
-        self._robot: Optional[URRobotSM] = None
+        self._node = node
 
+        # self._robot: Optional[URRobotSM] = None
+        self._robot = URRobotSM(node_name = "ur_custom_robot")
         # Set the main window properties
         self.setWindowTitle("UR Control Node")
         self.setGeometry(0, 0, 400, 400)
@@ -30,12 +38,42 @@ class URControlQtWindow(QMainWindow): # TODO: make ROS node
 
         self._launch_buttons = []
 
-        self.robot_tab = self._create_tab(name = "Robot Tab", tab_create_func = self._conf_robot_tab)
-        self.service_tab = self._create_tab(name = "Service Tab", tab_create_func = self.__conf_service_tab)
-    
-    def _create_tab(self, name: str, tab_create_func: Optional[Callable[[QLayout], None]] = None):
+        self.robot_tab = self._create_tab(name = "Robot Tab", layout = QVBoxLayout(), tab_create_func = self._conf_robot_tab)
+        self.service_tab = self._create_tab(name = "Service Tab", layout = QVBoxLayout(), tab_create_func = self.__conf_service_tab)
+
+        self._subscribers: dict[str, Subscription] = {}
+
+    def get_subscriber(self, topic: str) -> Optional[Subscription]:
+        if self._robot is None:
+            print("Initialize robot")
+            return None
+        
+        return self._subscribers.get(topic)
+
+    def create_subscriber(self, **kwargs) -> bool:
+        if "topic" not in kwargs: 
+            print("Need topic keyword argument")
+            return False
+        if kwargs.get("topic") in self._subscribers.keys():
+            print("Subscriber already created, use get_subscriber")
+            return True
+        
+        try:
+            self._subscribers[kwargs["topic"]] = self._node.create_subscription(**kwargs)
+            print(self._subscribers[kwargs["topic"]])
+            return True
+        except Exception as ex:
+            print(f"Exception: {ex}")
+            return False
+        
+    def remove_subscriber(self, topic: str) -> None:
+        sub = self._subscribers.pop(topic)
+        if sub is not None:
+            sub.destroy()   
+
+    def _create_tab(self, name: str, layout: QLayout, tab_create_func: Optional[Callable[[QLayout], None]] = None):
         _tab_widget = QWidget()
-        _tab_layout = QVBoxLayout()
+        _tab_layout = layout
         _tab_widget.setLayout(_tab_layout)
 
         if tab_create_func is not None:
@@ -48,7 +86,9 @@ class URControlQtWindow(QMainWindow): # TODO: make ROS node
     def _conf_robot_tab(self, layout: QLayout) -> None:
         def __init_robot(button: QPushButton):
             # TODO: remove need to do this
-            self._robot = URRobotSM("ur_node")
+            # self._robot = URRobotSM(self._node)
+            # self._robot = URRobotSM(node_name = "ur_custom_robot")
+
             button.setEnabled(False) # disable button so we can't re-initialize the class
             for button in self._launch_buttons:
                 # Now that robot node is active, we can enable services
@@ -357,10 +397,13 @@ class URControlQtWindow(QMainWindow): # TODO: make ROS node
 def main():
     # Create the application
     app = QApplication(sys.argv)
+
+    node = Node("ur_custom_ui")
     
     # Create the main window
-    main_window = URControlQtWindow()
+    main_window = URControlQtWindow(node)
     main_window.show()
+
+    threading.Thread(target = app.exec_, daemon = False).start()
     
-    # Run the application's event loop
-    sys.exit(app.exec_())
+    rclpy.spin()

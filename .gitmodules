@@ -19,3 +19,6 @@
 [submodule "src/ur10e_custom_control"]
 	path = src/ur10e_custom_control
 	url = https://github.com/gkouretas/ur10e_custom_control
+[submodule "src/ros2_plux_biosignals"]
+	path = src/ros2_plux_biosignals
+	url = https://github.com/gkouretas/ros2_plux_biosignals

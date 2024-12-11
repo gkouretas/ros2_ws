@@ -13,3 +13,9 @@
 [submodule "src/ros2_mindrove"]
 	path = src/ros2_mindrove
 	url = https://github.com/gkouretas/ros2_mindrove
+[submodule "src/pi_user_input_node"]
+	path = src/pi_user_input_node
+	url = https://github.com/gkouretas/pi_user_input_node
+[submodule "src/ur10e_custom_control"]
+	path = src/ur10e_custom_control
+	url = https://github.com/gkouretas/ur10e_custom_control

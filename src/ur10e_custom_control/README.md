@@ -31,4 +31,12 @@ Cleanup docker (fallback in race condition...)
 sudo docker network disconnect -f ursim_net ursim
 sudo systemctl restart docker.socket docker.service; sudo docker rm $(sudo docker ps -a -q) -f
 ```
+
+Other docker issues:
+- Network conflicts. Resolution: https://stackoverflow.com/questions/40524602/error-creating-default-bridge-network-cannot-create-network-docker0-confli
+- https://superuser.com/questions/1741326/how-to-connect-to-docker-daemon-if-unix-var-run-docker-sock-is-not-available
+- https://stackoverflow.com/questions/51857634/cannot-connect-to-the-docker-daemon-at-unix-var-run-docker-sock-is-the-docke
+- Uninstall docker: https://askubuntu.com/questions/935569/how-to-completely-uninstall-docker
+- Install docker: https://www.cherryservers.com/blog/install-docker-ubuntu-22-04
+
 ros2 run ur_client_library start_ursim.sh -a 192.168.57 -m ur10e -v 5.9.4 headless:=true && ros2 launch ur_robot_driver ur10e.launch.py robot_ip:=192.168.57.101 headless_mode:=true && ros2 launch ur_robot_driver test_scaled_joint_trajectory_controller.launch.py

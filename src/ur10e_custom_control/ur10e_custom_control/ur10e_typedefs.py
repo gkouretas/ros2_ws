@@ -15,7 +15,7 @@ from ur_dashboard_msgs.srv import (
     IsProgramRunning,
     Load,
 )
-from ur_msgs.srv import SetIO, GetRobotSoftwareVersion
+from ur_msgs.srv import SetIO, GetRobotSoftwareVersion, SetSpeedSliderFraction
 
 # Control mode types
 from control_msgs.action import FollowJointTrajectory
@@ -53,6 +53,7 @@ class URService:
 
         SRV_SET_IO = __namespace + "/set_io"
         SRV_RESEND_ROBOT_PROGRAM = __namespace + "/resend_robot_program"
+        SRV_SET_SPEED_SLIDER_FRACTION = __namespace + "/set_speed_slider"
     
     class URConfigurationController(str, Enum):
         __namespace = "/ur_configuration_controller"
@@ -80,6 +81,7 @@ class URService:
         ControllerManager.SRV_LIST_CONTROLLERS: ListControllers,
         IOAndStatusController.SRV_SET_IO: SetIO,
         IOAndStatusController.SRV_RESEND_ROBOT_PROGRAM: Trigger,
+        IOAndStatusController.SRV_SET_SPEED_SLIDER_FRACTION: SetSpeedSliderFraction,
         URConfigurationController.SRV_GET_ROBOT_SOFTWARE_VERSION: GetRobotSoftwareVersion
     }
 

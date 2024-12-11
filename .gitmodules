@@ -4,3 +4,12 @@
 [submodule "python_utils"]
 	path = python_utils
 	url = https://github.com/gkouretas/python_utils
+[submodule "src/exercise_decoder_node"]
+	path = src/exercise_decoder_node
+	url = https://github.com/gkouretas/exercise_decoder_node
+[submodule "src/idl_definitions"]
+	path = src/idl_definitions
+	url = https://github.com/gkouretas/idl_definitions
+[submodule "src/ros2_mindrove"]
+	path = src/ros2_mindrove
+	url = https://github.com/gkouretas/ros2_mindrove

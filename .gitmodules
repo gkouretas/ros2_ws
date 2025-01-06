@@ -22,3 +22,9 @@
 [submodule "src/ros2_plux_biosignals"]
 	path = src/ros2_plux_biosignals
 	url = https://github.com/gkouretas/ros2_plux_biosignals
+[submodule "src/Universal_Robots_Client_Library"]
+	path = src/Universal_Robots_Client_Library
+	url = https://github.com/gkouretas/Universal_Robots_Client_Library
+[submodule "src/Universal_Robots_ROS2_Driver"]
+	path = src/Universal_Robots_ROS2_Driver
+	url = https://github.com/gkouretas/Universal_Robots_ROS2_Driver

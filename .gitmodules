@@ -28,3 +28,9 @@
 [submodule "src/Universal_Robots_ROS2_Driver"]
 	path = src/Universal_Robots_ROS2_Driver
 	url = https://github.com/gkouretas/Universal_Robots_ROS2_Driver
+[submodule "src/ur_msgs"]
+	path = src/ur_msgs
+	url = https://github.com/gkouretas/ur_msgs
+[submodule "src/Universal_Robots_ROS2_Description"]
+	path = src/Universal_Robots_ROS2_Description
+	url = https://github.com/gkouretas/Universal_Robots_ROS2_Description

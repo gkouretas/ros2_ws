@@ -1,27 +1,27 @@
 {
     "python.autoComplete.extraPaths": [
-        "/home/georgekouretas/ros2_ws/install/ros2_plux_biosignals/lib/python3.10/site-packages",
-        "/home/georgekouretas/ros2_ws/install/ros2_mindrove/lib/python3.10/site-packages",
-        "/home/georgekouretas/ros2_ws/install/idl_definitions/local/lib/python3.10/dist-packages",
+        "~/ros2_ws/install/ros2_plux_biosignals/lib/python3.10/site-packages",
+        "~/ros2_ws/install/ros2_mindrove/lib/python3.10/site-packages",
+        "~/ros2_ws/install/idl_definitions/local/lib/python3.10/dist-packages",
         "/opt/ros/humble/lib/python3.10/site-packages",
         "/opt/ros/humble/local/lib/python3.10/dist-packages"
     ],
     "python.analysis.extraPaths": [
-        "/home/georgekouretas/ros2_ws/install/ros2_plux_biosignals/lib/python3.10/site-packages",
-        "/home/georgekouretas/ros2_ws/install/ros2_mindrove/lib/python3.10/site-packages",
-        "/home/georgekouretas/ros2_ws/install/idl_definitions/local/lib/python3.10/dist-packages",
-        "/home/georgekouretas/ros2_ws/build/exercise_decoder_node",
-        "/home/georgekouretas/ros2_ws/build/pi_user_input_node",
-        "/home/georgekouretas/ros2_ws/build/ros2_mindrove",
-        "/home/georgekouretas/ros2_ws/build/ros2_plux_biosignals",
-        "/home/georgekouretas/ros2_ws/build/ur10e_custom_control",
+        "~/ros2_ws/install/ros2_plux_biosignals/lib/python3.10/site-packages",
+        "~/ros2_ws/install/ros2_mindrove/lib/python3.10/site-packages",
+        "~/ros2_ws/install/idl_definitions/local/lib/python3.10/dist-packages",
+        "~/ros2_ws/build/exercise_decoder_node",
+        "~/ros2_ws/build/pi_user_input_node",
+        "~/ros2_ws/build/ros2_mindrove",
+        "~/ros2_ws/build/ros2_plux_biosignals",
+        "~/ros2_ws/build/ur10e_custom_control",
         "/opt/ros/humble/lib/python3.10/site-packages",
         "/opt/ros/humble/local/lib/python3.10/dist-packages"
     ],
     "terminal.integrated.env.linux": {
         "GTK_PATH": ""
     },
-    "cmake.sourceDirectory": "/home/georgekouretas/ros2_ws/src/idl_definitions",
+    "cmake.sourceDirectory": "~/ros2_ws/src/idl_definitions",
     "files.associations": {
         "future": "cpp",
         "functional": "cpp",

@@ -1,36 +1,48 @@
 [submodule "thirdparty/plux/python-samples"]
 	path = thirdparty/plux/python-samples
 	url = https://github.com/pluxbiosignals/python-samples
+	branch = master
 [submodule "python_utils"]
 	path = python_utils
 	url = https://github.com/gkouretas/python_utils
+	branch = main
 [submodule "src/exercise_decoder_node"]
 	path = src/exercise_decoder_node
 	url = https://github.com/gkouretas/exercise_decoder_node
+	branch = main
 [submodule "src/idl_definitions"]
 	path = src/idl_definitions
 	url = https://github.com/gkouretas/idl_definitions
+	branch = main
 [submodule "src/ros2_mindrove"]
 	path = src/ros2_mindrove
 	url = https://github.com/gkouretas/ros2_mindrove
+	branch = main
 [submodule "src/pi_user_input_node"]
 	path = src/pi_user_input_node
 	url = https://github.com/gkouretas/pi_user_input_node
+	branch = main
 [submodule "src/ur10e_custom_control"]
 	path = src/ur10e_custom_control
 	url = https://github.com/gkouretas/ur10e_custom_control
+	branch = main
 [submodule "src/ros2_plux_biosignals"]
 	path = src/ros2_plux_biosignals
 	url = https://github.com/gkouretas/ros2_plux_biosignals
+	branch = main
 [submodule "src/Universal_Robots_Client_Library"]
 	path = src/Universal_Robots_Client_Library
 	url = https://github.com/gkouretas/Universal_Robots_Client_Library
+	branch = george-main-fork
 [submodule "src/Universal_Robots_ROS2_Driver"]
 	path = src/Universal_Robots_ROS2_Driver
 	url = https://github.com/gkouretas/Universal_Robots_ROS2_Driver
+	branch = george-humble-fork
 [submodule "src/ur_msgs"]
 	path = src/ur_msgs
 	url = https://github.com/gkouretas/ur_msgs
+	branch = george-humble-devel-fork
 [submodule "src/Universal_Robots_ROS2_Description"]
 	path = src/Universal_Robots_ROS2_Description
 	url = https://github.com/gkouretas/Universal_Robots_ROS2_Description
+	branch = george-humble-fork

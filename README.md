@@ -18,6 +18,12 @@ Additionally, the real-time or low latency kernel is recommended to be installed
 
 For URSim, docker must be installed (instructions for Ubuntu 22.04 can be found [here](https://www.cherryservers.com/blog/install-docker-ubuntu-22-04)). To set up the URSim, the steps found [here](https://docs.universal-robots.com/Universal_Robots_ROS2_Documentation/doc/ur_robot_driver/ur_robot_driver/doc/installation/ursim_docker.html) may be performed.
 
+## Configuration
+To setup the workspace, run the following git command to checkout a branch and update all the active submodules:
+```bash
+git checkout tag/working-branch && git submodule update --init --recursive
+```
+
 ## Build
 If not already installed, install colcon for building the workspace with the following command:
 ```bash

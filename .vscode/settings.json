@@ -3,6 +3,8 @@
         "~/ros2_ws/install/ros2_plux_biosignals/lib/python3.10/site-packages",
         "~/ros2_ws/install/ros2_mindrove/lib/python3.10/site-packages",
         "~/ros2_ws/install/idl_definitions/local/lib/python3.10/dist-packages",
+        "~/ros2_ws/install/ur_dashboard_msgs/local/lib/python3.10/dist-packages",
+        "~/ros2_ws/install/ur_msgs/local/lib/python3.10/dist-packages",
         "/opt/ros/humble/lib/python3.10/site-packages",
         "/opt/ros/humble/local/lib/python3.10/dist-packages"
     ],
@@ -10,6 +12,8 @@
         "~/ros2_ws/install/ros2_plux_biosignals/lib/python3.10/site-packages",
         "~/ros2_ws/install/ros2_mindrove/lib/python3.10/site-packages",
         "~/ros2_ws/install/idl_definitions/local/lib/python3.10/dist-packages",
+        "~/ros2_ws/install/ur_dashboard_msgs/local/lib/python3.10/dist-packages",
+        "~/ros2_ws/install/ur_msgs/local/lib/python3.10/dist-packages",
         "~/ros2_ws/build/exercise_decoder_node",
         "~/ros2_ws/build/pi_user_input_node",
         "~/ros2_ws/build/ros2_mindrove",

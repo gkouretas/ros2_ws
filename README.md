@@ -8,8 +8,7 @@ To install, follow the provided directions found [here](https://docs.ros.org/en/
 
 In addition to the base installation, `ros2_control` is required and can be installed with the following commands:
 ```bash
-$ sudo apt install ros-humble-ros2-control
-$ sudo apt install ros-humble-ros2-controllers
+$ sudo apt install ros-humble-ros2-control ros-humble-ros2-controllers
 $ sudo apt-get install ros-humble-xacro
 ```
 

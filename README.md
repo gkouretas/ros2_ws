@@ -20,7 +20,7 @@ For URSim, docker must be installed (instructions for Ubuntu 22.04 can be found 
 ## Configuration
 To setup the workspace, run the following git command to checkout a branch and update all the active submodules:
 ```bash
-git checkout tag/working-branch && git submodule update --init --recursive
+git checkout <branch> && git pull && git submodule update --init --recursive
 ```
 
 ## Build

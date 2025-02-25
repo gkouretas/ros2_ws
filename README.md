@@ -23,6 +23,9 @@ To setup the workspace, run the following git command to checkout a branch and u
 git checkout <branch> && git pull && git submodule update --init --recursive
 ```
 
+Ethernet settings:
+- See [here](./src/Universal_Robots_ROS2_Driver/ur_robot_driver/doc/installation/robot_setup.rst) for pendant/PC configuration
+
 ## Build
 If not already installed, install colcon for building the workspace with the following command:
 ```bash

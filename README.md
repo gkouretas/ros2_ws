@@ -26,6 +26,9 @@ git checkout <branch> && git pull && git submodule update --init --recursive
 Ethernet settings:
 - See [here](./src/Universal_Robots_ROS2_Driver/ur_robot_driver/doc/installation/robot_setup.rst) for pendant/PC configuration
 
+GPU support
+- For GPU support for usage with tensorflow, I followed the following steps [here](https://gist.github.com/pantor/9786c41c03a97bca7a52aa0a72fa9387) to allow for usage with the RT-kernel, which tends to not have inherent compatibility with NVIDIA drivers.
+
 ## Build
 If not already installed, install colcon for building the workspace with the following command:
 ```bash

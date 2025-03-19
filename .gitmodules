@@ -30,6 +30,10 @@
 	path = src/ros2_plux_biosignals
 	url = https://github.com/gkouretas/ros2_plux_biosignals
 	branch = main
+[submodule "src/fatigue_classifier"]
+	path = src/fatigue_classifier
+	url = https://github.com/gkouretas/fatigue_classifier
+	branch = main
 [submodule "src/Universal_Robots_Client_Library"]
 	path = src/Universal_Robots_Client_Library
 	url = https://github.com/gkouretas/Universal_Robots_Client_Library

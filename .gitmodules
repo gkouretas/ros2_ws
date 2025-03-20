@@ -50,7 +50,7 @@
 	path = src/Universal_Robots_ROS2_Description
 	url = https://github.com/gkouretas/Universal_Robots_ROS2_Description
 	branch = george-humble-fork
-[submodule "thirdparty/8821cu-20210916"]
-	path = thirdparty/8821cu-20210916
+[submodule "thirdparty/wifi_driver/8821cu-20210916"]
+	path = thirdparty/wifi_driver/8821cu-20210916
 	url = https://github.com/morrownr/8821cu-20210916
 	branch = main

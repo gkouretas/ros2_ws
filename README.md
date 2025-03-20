@@ -8,8 +8,7 @@ To install, follow the provided directions found [here](https://docs.ros.org/en/
 
 In addition to the base installation, `ros2_control` is required and can be installed with the following commands:
 ```bash
-$ sudo apt install ros-humble-ros2-control
-$ sudo apt install ros-humble-ros2-controllers
+$ sudo apt install ros-humble-ros2-control ros-humble-ros2-controllers
 $ sudo apt-get install ros-humble-xacro
 ```
 
@@ -21,8 +20,15 @@ For URSim, docker must be installed (instructions for Ubuntu 22.04 can be found 
 ## Configuration
 To setup the workspace, run the following git command to checkout a branch and update all the active submodules:
 ```bash
-git checkout tag/working-branch && git submodule update --init --recursive
+git checkout <branch> && git pull && git submodule update --init --recursive
 ```
+
+Ethernet settings:
+- See [here](./src/Universal_Robots_ROS2_Driver/ur_robot_driver/doc/installation/robot_setup.rst) for pendant/PC configuration
+  - Note: there is no need to have other networks (i.e. WiFi) so long as there are no networks conflicts
+
+GPU support
+- For GPU support for usage with tensorflow, I followed the following steps [here](https://gist.github.com/pantor/9786c41c03a97bca7a52aa0a72fa9387) to allow for usage with the RT-kernel, which tends to not have inherent compatibility with NVIDIA drivers.
 
 ## Build
 If not already installed, install colcon for building the workspace with the following command:
@@ -35,14 +41,3 @@ From the workspace folder, run the following command to build the complete works
 $ colcon build --symlink-install
 $ source install/setup.bash
 ```
-
-# ROS2 Workspace
-## Helpful links
-### Visualization
-[rqt](http://docs.ros.org/en/humble/Concepts/Intermediate/About-RQt.html)
-### Universal robots
-[ROS2 Driver Repository](https://github.com/UniversalRobots/Universal_Robots_ROS2_Driver)
-[UR Simulator Setup Instructions](https://docs.ros.org/en/ros2_packages/rolling/api/ur_robot_driver/usage.html#usage-with-official-ur-simulator)
-[RT Platform Setup](https://docs.universal-robots.com/Universal_Robots_ROS2_Documentation/doc/ur_client_library/doc/real_time.html#real-time-setup)
-
-Click [here](http://localhost:6080/vnc_auto.html) to access interface

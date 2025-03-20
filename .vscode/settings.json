@@ -25,7 +25,7 @@
     "terminal.integrated.env.linux": {
         "GTK_PATH": ""
     },
-    "cmake.sourceDirectory": "~/ros2_ws/src/idl_definitions",
+    "cmake.sourceDirectory": "/home/gkouretas/ros2_ws/src/Universal_Robots_Client_Library/tests",
     "files.associations": {
         "future": "cpp",
         "functional": "cpp",
@@ -102,7 +102,8 @@
         "cinttypes": "cpp",
         "typeindex": "cpp",
         "typeinfo": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "*.txx": "cpp"
     },
     "ros.distro": "humble",
 }

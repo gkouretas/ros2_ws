@@ -2,7 +2,7 @@
 
 TARGET=$1
 PATH="$(pwd)/src/$TARGET/$TARGET"
-PYTHON_UTILS_PATH="$(pwd)/python_utils"
+PYTHON_UTILS_PATH="../../../python_utils"
 
 # Check if both arguments are provided
 if [ -z "$TARGET" ]; then
@@ -11,12 +11,12 @@ if [ -z "$TARGET" ]; then
 fi
 
 # Check if target exists
-if [ ! -e "$PATH" -o ! -e "$PYTHON_UTILS_PATH" ]; then
-    echo "Error: Target '$PATH' and/or '$PYTHON_UTILS_PATH' does not exist."
+if [ ! -e "$PATH" ]; then
+    echo "Error: Target '$PATH' does not exist."
     exit 1
 fi
 
-if [ -L "$PATH/python_utils" ]; then
+if [ -L "$PYTHON_UTILS_PATH" ]; then
     echo "Symlink already exists, exiting."
     exit 0
 fi

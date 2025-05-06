@@ -6,18 +6,25 @@
         "limitSymbolsToIncludedHeaders": false
       },
       "includePath": [
-        "~/ros2_ws/install/idl_definitions/include/**",
-        "~/ros2_ws/install/ur_dashboard_msgs/include/**",
-        "~/ros2_ws/install/ur_msgs/include/**",
-        "~/ros2_ws/install/ur_controllers/include/**",
+        "/home/gkouretas/ros2_ws/install/ur_calibration/include/**",
+        "/home/gkouretas/ros2_ws/install/ur_robot_driver/include/**",
+        "/home/gkouretas/ros2_ws/install/ur_controllers/include/**",
+        "/home/gkouretas/ros2_ws/install/ur_msgs/include/**",
+        "/home/gkouretas/ros2_ws/install/ur_dashboard_msgs/include/**",
+        "/home/gkouretas/ros2_ws/install/ur_client_library/include/**",
+        "/home/gkouretas/ros2_ws/install/idl_definitions/include/**",
         "/opt/ros/humble/include/**",
+        "/home/gkouretas/ros2_ws/src/Universal_Robots_Client_Library/include/**",
+        "/home/gkouretas/ros2_ws/src/Universal_Robots_ROS2_Driver/ur_calibration/include/**",
+        "/home/gkouretas/ros2_ws/src/Universal_Robots_ROS2_Driver/ur_controllers/include/**",
+        "/home/gkouretas/ros2_ws/src/Universal_Robots_ROS2_Driver/ur_robot_driver/include/**",
         "/usr/include/**"
       ],
       "name": "ROS",
       "intelliSenseMode": "gcc-x64",
       "compilerPath": "/usr/bin/gcc",
       "cStandard": "gnu11",
-      "cppStandard": "c++17"
+      "cppStandard": "c++14"
     }
   ],
   "version": 4

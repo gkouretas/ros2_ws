@@ -19,13 +19,15 @@
         "~/ros2_ws/build/ros2_mindrove",
         "~/ros2_ws/build/ros2_plux_biosignals",
         "~/ros2_ws/build/ur10e_custom_control",
+        "~/ros2_ws/build/fatigue_experiment_control",
+        "~/ros2_ws/build/fatigue_classifier",
         "/opt/ros/humble/lib/python3.10/site-packages",
         "/opt/ros/humble/local/lib/python3.10/dist-packages"
     ],
     "terminal.integrated.env.linux": {
         "GTK_PATH": ""
     },
-    "cmake.sourceDirectory": "/home/gkouretas/ros2_ws/src/Universal_Robots_Client_Library/tests",
+    "cmake.sourceDirectory": "/home/georgekouretas/ros2_ws/src/Universal_Robots_Client_Library",
     "files.associations": {
         "future": "cpp",
         "functional": "cpp",

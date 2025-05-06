@@ -54,3 +54,6 @@
 	path = thirdparty/wifi_driver/8821cu-20210916
 	url = https://github.com/morrownr/8821cu-20210916
 	branch = main
+[submodule "src/fatigue_experiment_control"]
+	path = src/fatigue_experiment_control
+	url = https://github.com/gkouretas/fatigue_experiment_control

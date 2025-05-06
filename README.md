@@ -41,3 +41,7 @@ From the workspace folder, run the following command to build the complete works
 $ colcon build --symlink-install
 $ source install/setup.bash
 ```
+
+- Raspberry Pi
+  - User: gkouretas
+  - Password: root

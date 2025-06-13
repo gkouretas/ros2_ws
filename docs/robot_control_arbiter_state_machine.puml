@@ -1,0 +1,119 @@
+@startuml
+
+state PreviewEntryState <<start>>
+state RobotError <<start>>
+state UnknownState <<start>>
+
+UnknownState -down-> Uninitialized
+note on link
+If the UR robot state is not RUNNING or IDLE, 
+move to Uninitialized state
+end note
+
+RobotError -down-> Error
+note on link
+If any unexpected results happen (i.e. service fails),
+or if the UR reports an error, the state machine will 
+transition to Error state
+end note
+
+state Error {
+    Error : Currently configured to be unrecoverable
+    Error -> Error : StopRobotProgram
+    note on link
+    Program will stop if running when in error state
+    end note
+}
+
+state Uninitialized {
+    Uninitialized : Starting state
+    Uninitialized : Will enter uninitialized if a robot error occurs
+    Uninitialized : when entered
+    Uninitialized -down-> Initialized : StartRobotProgram
+}
+
+state Initialized {
+    Initialized : State with which the robot is setup and the 
+    Initialized : robot program is running
+    Initialized -down-> Idle : MoveToHome
+}
+
+state Idle {
+    Idle : State where initial setup is complete and planning
+    Idle : and exercise execution subsequently happen
+    Idle -down-> Planning : BackdriveRobot
+    Idle -down-> Trajectory : ResetArm
+    Idle -down-> Trajectory : PreviewExercise
+    Idle -down-> Trajectory : LoadExperiment
+}
+
+state Trajectory {
+    Trajectory : State with which the robot is actively
+    Trajectory : due to a trajectory
+    Trajectory -up[#Blue]-> Idle : tool_engaged
+    note on link
+    If the handle is engaged during a 
+    trajectory, transition to idle
+    end note
+    Trajectory -[#Blue]-> PreviewEntryState : PreviewComplete
+    note on link
+    Return to initial state
+    end note
+    Trajectory -down-> Ready : LoadExperiment
+}
+
+
+state Planning {
+    Planning : Planning is synonymous with freedriving the robot,
+    Planning : which is done when repositioning or planning an exercise
+    Planning -left-> Trajectory
+}
+
+state Preview {
+    Preview : Have the robot perform a looping trajectory
+    Preview : showing the exercise
+    PreviewEntryState -up-> Preview : PreviewExercise
+    Preview -right-> Trajectory
+    note on link
+    Enter trajectory state to preview exercise
+    end note
+}
+
+state Ready {
+    Ready : In this state, the exercise is ready to start
+    Ready : once the requisite conditions are met
+    Ready -down[#Blue]> Active : is_active && tool_engaged
+    note on link
+    The user must press start and have the tool engaged to start
+    end note
+}
+
+state Active {
+    Active : State where exercise is active
+
+    Active -down[#Blue]-> Paused : !is_engaged 
+    note on link
+    If the user disengages the tool, pause the exercise
+    end note
+    
+    Active -up[#Blue]-> Idle : !is_active
+    note on link
+    If the user presses stop, end the exercise
+    end note
+
+    Active -up[#Blue]-> Idle : exercise_complete
+}
+
+state Paused {
+    Paused -down[#Blue]-> Active : is_engaged
+    note on link
+    If the user engages the tool, resume the exercise
+    end note
+
+    Paused -up[#Blue]-> Idle : !is_active
+    note on link
+    If the user presses stop, resume the exercise
+    end note
+}
+
+@enduml

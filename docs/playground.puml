@@ -1,0 +1,30 @@
+@startuml
+
+class RvizManager {
+    ..Standard members..
+    + num_repetitions: int
+    + refresh_rate: Optional[float]
+    + move_camera_with_exercise: bool
+    + align_with_path: bool
+    - right_handed: bool
+    - lock: Lock
+    - constant_transform: NDArray
+    ..ROS members..
+    + node: Node
+    - dynamic_force_poses: Publisher[PoseArray]
+    - target_pose_publisher: Publisher[Marker]
+    - path_publisher: Publisher[Path]
+    - error_vector_publisher: Publisher[Marker]
+    - progress_text_publisher: Publisher[Marker]
+    - rviz_camera_tform_publisher: TransformBroadcaster
+    ..Callbacks..
+    + def update_pose(pose: PoseStamped) -> None
+    + def exercise_completion_callback() -> None
+    + def exercise_feedback(feedback: ...) -> None
+    - def compute_and_send_camera_frame(frame: ...) -> None
+    ..Methods..
+    + def reset() -> None
+    + def visualize_exercise() -> None
+}
+
+@enduml

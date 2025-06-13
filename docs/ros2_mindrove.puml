@@ -1,0 +1,105 @@
+@startuml
+
+class BoardShim {
+    Mindrove API's base interface
+    ..Params..
+    + board_id: interface
+    + input_params: MindroveInputParams
+}
+
+class MindroveInterface {
+    Mindrove interface with some QoL improvements
+    ..Members..
+    + desc: MindroveHardwareDescription
+    + additional_channels: Tuple[str, ...]
+    + log_level: LogLevels
+    + samples_per_interval: int
+    - sampling_interval: float
+    - sampling_rate: float
+    - scaling_factors: Dict[MindroveChannels, float]
+    - channel_map: Dict[str, Union[int, List[int]]]
+    ..Methods..
+    + def run(...) -> None
+    + def get_data_buffer() -> Tuple[float, MindroveSampleBuffer]
+    - def cyclic_sample(lag_compensation: bool) -> None
+    - def get_factor(key) -> float
+    - {abstract} def data_callback(timestamp: float, data: MindroveSampleBuffer) -> None
+}
+
+annotation MindroveSampleBuffer {
+    Sample buffer that contains map of configured channels 
+    and acquired data
+    --
+    + Dict[MindroveChannels, Optional[NDArray]]
+}
+
+enum MindroveChannels {
+    String enum of available MindroveChannels, per the API
+}
+
+MindroveSampleBuffer -up-* MindroveInterface
+MindroveChannels -up-* MindroveInterface
+
+class MindroveArmbandRosPublisher {
+    Mindrove interface tailored toward publishing data over ROS
+    ..Members..
+    + simulated: bool
+    + additional_channels: Tuple[str, ...]
+    + samples_per_interval: int
+    - mindrove_publisher: Publisher<MindroveArmBandEightChannelMsg>
+    - control_timestamp: float
+    ..Methods..
+    - def data_callback(timestamp: float, data: MindroveSampleBuffer) -> None
+}
+
+note right of MindroveArmbandRosPublisher::data_callback
+Within the data callback, we publish a ROS packet
+end note
+
+BoardShim <|-right- MindroveInterface
+MindroveInterface <|-right- MindroveArmbandRosPublisher
+
+class MindroveArmBandEightChannelMsg {
+    ROS armband topic
+    ..Metadata..
+    + frame: int
+    + world_timestamp: float
+    + source_timestamp: float
+    + battery_percentage: float
+    + num_emg_samples: int
+    + num_imu_samples: int
+    + control_timestamp: int
+    ..EMG data..
+    + c1: List[float]
+    + c2: List[float]
+    + c3: List[float]
+    + c4: List[float]
+    + c5: List[float]
+    + c6: List[float]
+    + c7: List[float]
+    + c8: List[float]
+    ..IMU data..
+    + accel: List[Vector3]
+    + gyro: List[Vector3]
+}
+
+package ROS <<database>> {
+
+}
+
+ROS --* MindroveArmbandRosPublisher : " "
+note on link
+Incoming topics
+- N/A
+end note
+
+ROS *-- MindroveArmbandRosPublisher : " "
+note on link
+Outgoing topics
+- MindroveArmBandEightChannelMsg
+end note
+
+MindroveArmBandEightChannelMsg -up-* ROS
+MindroveArmBandEightChannelMsg -up-* MindroveArmbandRosPublisher
+
+@enduml

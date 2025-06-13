@@ -1,0 +1,113 @@
+@startuml
+
+class SignalsDev {
+    + def getSensors() -> Dict[int, PluxSensor]
+    + def start(freq: int, portMask: int, nBits: int) -> None
+    + def stop(...) -> None
+    + def loop() -> None
+    {abstract} + def onRawFrame(nSeq: int, data: Tuple[int, ...]) -> bool
+}
+
+note left of SignalsDev::start
+Start sensor acquisition w/ given frequency,
+sensor ports, and ADC resolution.
+end note
+
+note left of SignalsDev::loop
+Dispatch function, exits upon disconnection
+or loss of connection
+end note
+
+note left of SignalsDev::onRawFrame
+Callback for when a data sample is received
+end note
+
+class MyPluxDevice {
+    ..Constructor..
+    + def connect(address: str, publisher: Publisher[PluxMsg]) -> MyPluxDevice
+    ..Members..
+    - table: Dict[int, PluxSensor]
+    - frame: int
+    - queue: Deque[PluxMsg]
+    - loop_thread: Thread
+    - lock: Lock
+    - signal: Event
+    ..ROS members..
+    + node: Node
+    - plux_publisher: Publisher[PluxMsg]
+    - timer: Timer
+    ..Methods..
+    + def run() -> None
+    + def process_data() -> None
+    + def set_publisher(publisher: Publisher[PluxMsg]) -> None
+    + def onRawFrame(...) -> bool
+    - def setup_sensor_table() -> None
+}
+
+class PluxMsg {
+    Plux sensor hub message
+    ..Metadata..
+    + world_timestamp: float
+    + frame: int
+    + source_timestamp: float
+    ..Sensor Data..
+    + ports: List[PluxSensor]
+}
+
+class PluxSensor {
+    Individual plux sensor
+    ..
+    + sensor_type: int
+    + port: int
+    + value: float
+}
+
+MyPluxDevice::process_data -right-> PluxMsg
+PluxMsg::ports -right-* PluxSensor
+
+note right of PluxSensor::sensor_type
+Sensor enum constant, defined by plux API
+end note
+
+note right of PluxSensor::value
+Value converted to relevant units from raw
+ADC measurement
+end note
+
+note left of MyPluxDevice::signal
+Set when data is received
+end note
+
+note left of MyPluxDevice::timer
+Triggers process_data to execute via setting the signal
+at 2x the acquisition frequency.
+end note
+
+note left of MyPluxDevice::run
+Executes plux thread and ROS timed publisher
+end note
+
+note left of MyPluxDevice::process_data
+Data publishing thread. Separate from plux thread
+in order to maximize data acquisition bandwidth.
+Deques received frames and publishes them to the network.
+end note
+
+note left of MyPluxDevice::setup_sensor_table
+Sets up map for which sensors map to which port.
+Records the map in the table member.
+end note
+
+SignalsDev -up-|> MyPluxDevice
+
+package ROS <<database>> {
+
+}
+
+ROS *-down- MyPluxDevice : " "
+note on link
+Outgoing topics
+- PluxMsg
+end note
+
+@enduml

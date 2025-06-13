@@ -1,0 +1,74 @@
+@startuml
+
+state GoalValidCond <<choice>>
+
+[*] -down-> GoalValidCond
+note on link
+Goal received
+end note
+
+state GoalCancelled <<start>>
+GoalCancelled -down-> [*]
+note on link
+Goal cancelled
+end note
+
+GoalValidCond -down-> [*] : !goal_accepted
+note on link
+Can fail if:
+- The controller is not running
+- Force mode is already active
+- Force mode is unable to be set
+end note
+
+state Transform <<start>>
+state HardwareAborted <<choice>>
+
+Transform -down-> HardwareAborted
+note on link
+Control state machine is run on each real-time control loop
+end note
+
+HardwareAborted -down-> [*] : abort_command && is_active
+note on link
+Abort the goal if an abort signal is received
+end note
+
+HardwareAborted -down-> Idle
+
+state Idle {
+    Idle : Initial state
+    Idle -down-> WaitingForPoint : GoalReceived
+}
+
+state IsCompleteCond <<choice>>
+
+state WaitingForPoint {
+    WaitingForPoint : Set compliance vector and force frame from next
+    WaitingForPoint : point in the trajectory
+    WaitingForPoint -down-> IsCompleteCond
+}
+
+IsCompleteCond -down-> InMotion : !is_complete
+IsCompleteCond -down-> Done : is_complete
+
+state InMotion {
+    InMotion : State where motion is active
+    InMotion : Exit when pose is near target within defined tolerance
+    InMotion -up-> WaitingForPoint : pose_tolerance < waypoint_tolerances
+}
+
+
+state Done {
+    Done : Control has successfully completed
+}
+
+
+Done -down-> [*]
+note on link
+Goal succeeded
+end note
+
+
+
+@enduml

@@ -1,0 +1,70 @@
+@startuml
+
+class UserInputNode {
+    - lock: threading.Lock
+    ..Peripherals..
+    - encoder: RotaryEncoder
+    - buttons: List[Button]
+    - display: LEDMultiCharDisplay
+    - rgb_led: RGBLED
+    - heartbeat_led: LED
+    ..ROS variables..
+    + node: Node
+    - publisher: Publisher<UserInputMsg>
+    - pub_timer: Timer
+    ..Properties..
+    + fatigue_percentage: int
+    ..Callbacks..
+    + def button_callback(info: PiButtonInfo) -> None
+    + def encoder_callback() -> None
+    + def publish_info_callback() -> None
+}
+
+rectangle Peripherals {
+    rectangle Display {
+        circle "RGB LED" as RGB #Red-Green
+        circle "7Seg" as 7S #Red
+        circle "❤️ LED" as HL #Blue
+
+        RGB -right[hidden]- 7S
+        7S -right[hidden]- HL
+    }
+
+    rectangle Inputs {
+        circle "Start/Stop" as B1 #Green
+        circle "  25%" as B2 #Red
+        circle " 50%" as B3 #Yellow
+        circle "75%" as B4 #Blue
+        circle "100%" as B5 #Black
+        circle "Knob" as K #Black
+
+        B1 -right[hidden]-> B2
+        B2 -right[hidden]-> B3
+        B3 -right[hidden]-> B4
+        B4 -right[hidden]-> B5
+        B5 -right[hidden]-> K
+    }
+
+    Inputs -up-> UserInputNode::buttons
+    Inputs -up-> UserInputNode::encoder
+
+    Display -up-> UserInputNode::display
+    Display -up-> UserInputNode::rgb_led
+    Display -up-> UserInputNode::heartbeat_led
+
+    Inputs -up[hidden]-> Display
+}
+
+package ROS <<database>> {
+    
+}
+
+ROS -down-* UserInputNode : " "
+note on link
+Outgoing topics:
+- UserInputMsg
+end note
+
+UserInputNode -down[hidden]- Peripherals
+
+@enduml

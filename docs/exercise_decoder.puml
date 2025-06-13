@@ -1,0 +1,63 @@
+@startuml
+
+class ExerciseForceModeParamsDecoder {
+    - lock: threading.Lock
+    - signal: threading.Event
+    - upper_bound: float
+    - lower_bound: float
+    ..ROS variables..
+    + node: Node
+    - fatigue_monitor: Subscription<FatigueState>
+    - mapped_fatigue: float
+    - force_mode_params_service: Client<SetForceModeParams>
+    ..Methods..
+    + def update_force_mode_params(msg: FatigueState) -> None
+    + def map(...) -> None
+    ..Threads..
+    - def force_mode_params_service_thread() -> None
+}
+
+note left of ExerciseForceModeParamsDecoder::signal
+Signal alerts service thread to send updated damping factor
+end note
+
+note left of ExerciseForceModeParamsDecoder::upper_bound
+Upper bound damping value. Maps to amount for zero fatigue
+end note
+
+note left of ExerciseForceModeParamsDecoder::lower_bound
+Lower bound damping value. Maps to amount for maximum fatigue
+end note
+
+note left of ExerciseForceModeParamsDecoder::map(...)
+Linearly map fatigue (0-1) to the upper/lower bounds for damping
+end note
+
+package ROS <<database>> {
+    interface fatigue_classifier {
+        Fatigue classification_layer
+        --
+        Get the fatigue state, both predicted and actual
+    }
+
+    interface ur_robot_driver {
+        UR robot driver
+        --
+        Utilized to interact with the UR based upon the
+        desired control mode
+    }
+}
+
+ROS *-- ExerciseForceModeParamsDecoder : " "
+note on link
+Incoming topics:
+- FatigueState
+end note
+
+ROS --* ExerciseForceModeParamsDecoder : " "
+note on link
+Outgoing topics:
+- SetForceModeParams
+end note
+
+@enduml

@@ -1,0 +1,130 @@
+@startuml
+
+rectangle People {
+    :User:
+    :Arbiter:
+
+    :User: -right[hidden]- :Arbiter:
+}
+
+note as N1 #64fa4b
+Users involved with experiment
+end note
+
+N1 -left-> People
+
+rectangle Touchpoints {
+    usecase "Input device" as ID
+    usecase "Sensors" as S
+    usecase "Robot" as R
+    usecase "User Interface" as UI
+    usecase "Control Interface" as CI
+
+    ID -right[hidden]- S
+    S -right[hidden]- R
+    R -right[hidden]- UI
+    UI -right[hidden]- CI
+}
+
+note as N2 #64fa4b
+Items interacted with by the user
+or experiment arbiter
+end note
+
+N2 -right-> Touchpoints
+
+rectangle Control {
+    usecase "Sensor Processing" as SP
+    usecase "Robot Control" as RC
+    usecase "Fatigue Prediction" as FP
+
+    SP -right[hidden]- RC
+    RC -right[hidden]- FP
+}
+
+note as N3 #64fa4b
+Backend control processes
+end note
+
+N3 -right-> Control
+
+People -down[hidden]- Touchpoints
+Touchpoints -down[hidden]- Control
+
+:User: <-right-> R : " "
+note on link
+The user moves the robot in the
+motion of the exercise, and the
+robot's admittance varies as a
+function of the user's fatigue
+end note
+
+:User: -right-> ID : " "
+note on link
+The user inputs its fatigue state
+end note
+
+:User: <-down-> S : " "
+note on link
+Sensors aquire the user's 
+biometric data
+end note
+
+UI -up-> :User: : " "
+note on link
+The user interface provides an interactive
+view of the robot's exercise path and target
+point
+end note
+
+RC -up-> UI : " "
+note on link
+The robot's status and control are feedback
+for the user's interactive interface
+end note 
+
+:Arbiter: -down-> CI : " "
+note on link
+The arbiter performs workflow
+commands via a user-interface
+to facilitate control
+end note
+
+R <-down-> RC : " "
+note on link
+Robot moves via commands from controller
+end note
+
+ID -down-> FP : " "
+note on link
+Fatigue data is transitted to the
+computer for training
+end note
+
+FP -left-> RC : " "
+note on link
+Fatigue prediction is a feedback 
+loop to the robot's control
+end note
+
+CI -left-> RC
+note on link
+Robotic execution facilitated by control interface
+commands
+end note
+
+S -down-> SP : " "
+note on link
+Sensor data is transmitted to the
+computer for real-time signal processing
+end note
+
+SP -right-> FP : " "
+note on link
+Pre-processed sensor data is used
+for fatigue prediction
+end note
+
+@enduml
+
+

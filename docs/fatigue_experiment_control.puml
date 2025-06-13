@@ -1,0 +1,286 @@
+@startuml
+
+class ManualExperimentControlGui {
+    ..ROS members..
+    + node: Node
+    - mindrove_sub: Subscriber[MindroveArmBandEightChannelMsg]
+    - plux_sub: Subscriber[PluxMsg]
+    - input_device_sub: Subscriber[UserInputMsg]
+    - mindrove_watchdog_timer: Timer
+    - plux_watchdog_timer: Timer
+    - input_device_watchdog_timer: Timer
+    - logger_timer: Timer
+    - log_manager: RosbagManager
+    ..Qt members..
+    - watchdog_labels: QLabel
+}
+
+class ExperimentControlGui {
+    ..ROS members..
+    + node: Node
+    - rviz_manager: RvizManager
+    - robot_manager: RobotControlArbiter
+    - exercise_manager: ExerciseManager
+    - mindrove_sub: Subscriber[MindroveArmBandEightChannelMsg]
+    - plux_sub: Subscriber[PluxMsg]
+    - mindrove_watchdog_timer: Timer
+    - plux_watchdog_timer: Timer
+    - input_device_watchdog_timer: Timer
+    ..Qt members..
+    - watchdog_labels: QLabel
+    - buttons: Dict[QPushButton, Callable]
+}
+
+class RobotControlArbiter {
+    ..Params..
+    + robot: URRobotSM
+    + simulate_tool: bool
+    + num_repetitions: int
+    + engagement_debounce: Optional[float]
+    + state_change_callback: Callable
+    + deploy_feedback_callback: Callable
+    + experiment_feedback_callback: Callable
+    + experiment_repetition_completion_callback: Callable
+    + experiment_set_completion_callback: Callable
+    + watchdog_input_device_change_callback: Callable
+    + watchdog_tool_change_callback: Callable
+    ..Members..
+    + is_ready: bool
+    + tool_engaged: bool
+    - state: RobotControlStatus
+    - is_active: bool
+    - robot_mutex: RLock
+    - telemetry_mutex: RLock
+    - home_pose: List[List[float]]
+    - goal_queue: Deque[Goal]
+    ..ROS members..
+    + node: Node
+    - tool_status: Subscriber[ToolDataMsg]
+    - input_device_status: Subscriber[UserInputMsg]
+    - fatigue_experiment_state: Publisher[ExerciseState]
+    - tool_state_watchdog: Timer
+    - input_device_state_watchdog: Timer
+    - user_input_debounce: Timer
+    ..Methods..
+    + def start_robot_program() -> bool
+    + def stop_robot_program() -> bool
+    + def backdrive_robot(params: Request) -> bool
+    + def exit_planning() -> None
+    + def set_position_as_home(home: List[List[float]]) -> None
+    + def move_to_home(home: List[List[float]]) -> None
+    + def reset_arm_pose() -> None
+    + def preview_exercise(signal: Event) -> None
+    + def load_experiment(exercise: Exercise) -> bool
+    + def stop_experiment_override() -> None
+    - def change_state(state: RobotControlStatus) -> None
+    - def reset_experiment() -> None
+    - def move_to(pose: list[float], duration: Duration, pending_state: Optional[RobotControlStatus])
+    - def start_experiment(exercise: Exercise) -> bool
+    - def pause_program() -> bool
+    - def play_program() -> bool
+    - def run_state_machine() -> None
+    ..Callbacks..
+    - def robot_control_completion(...) -> None
+    - def exercise_completion(...) -> None
+    - def trip_tool_state_watchdog() -> None
+    - def trip_input_device_watchdog() -> None
+    - def trip_debounce() -> None
+    - def monitor_experiment() -> None
+    - def update_tool_state(msg: ToolDataMsg) -> None
+    - def update_user_input_state(msg: UserInputMsg) -> None
+}
+
+class RvizManager {
+    ..Standard members..
+    + num_repetitions: int
+    + refresh_rate: Optional[float]
+    + move_camera_with_exercise: bool
+    + align_with_path: bool
+    - right_handed: bool
+    - lock: Lock
+    - constant_transform: NDArray
+    ..ROS members..
+    + node: Node
+    - dynamic_force_poses: Publisher[PoseArray]
+    - target_pose_publisher: Publisher[Marker]
+    - path_publisher: Publisher[Path]
+    - error_vector_publisher: Publisher[Marker]
+    - progress_text_publisher: Publisher[Marker]
+    - rviz_camera_tform_publisher: TransformBroadcaster
+    ..Callbacks..
+    + def update_pose(pose: PoseStamped) -> None
+    + def exercise_completion_callback() -> None
+    + def exercise_feedback(feedback: ...) -> None
+    - def compute_and_send_camera_frame(frame: ...) -> None
+    ..Methods..
+    + def reset() -> None
+    + def visualize_exercise() -> None
+}
+
+class ExerciseManager {
+    ..ROS members..
+    + node: Node
+    - joint_angle_sub: Subscriber[JointState]
+    - pose_sub: Subscriber[PoseStamped]
+    ..Methods..
+    + def start_monitoring(name: str, pose_decimation: int, joint_decimation: int) -> None
+    + def stop_monitoring() -> None
+    + def is_monitoring() -> bool
+    + def get_exercise(decimated: bool) -> Optional[Exercise]
+    + def save_exercise(fp: Path) -> bool
+    + def load_exercise(path: Path) -> bool
+    + def generate_path(poses: List[PoseStamped]) -> List[PoseStamped]
+    + def get_exercise_dofs(exercise: ExerciseType) -> List[bool]
+    ..Callbacks..
+    - def add_pose(pose: PoseStamped) -> None
+    - def add_joint_state(joints: JointState) -> None
+}
+
+package ROS <<database>> {
+    interface ur_robot_driver {
+        UR robot driver
+        --
+        Utilized to interact with the UR based upon the
+        desired control mode
+    }
+    interface ros2_mindrove {
+        Mindrove node
+        --
+        Monitor that telemetry is active
+    }
+    interface ros2_plux_biosignals {
+        Plux node
+        --
+        Monitor that telemetry is active
+    }
+    interface pi_user_input_node {
+        User input node
+        --
+        Monitor user's start/stop command
+    }
+    ur_robot_driver -right[hidden]- ros2_mindrove
+    ros2_mindrove -right[hidden]- ros2_plux_biosignals
+    ros2_plux_biosignals -right[hidden]- pi_user_input_node
+}
+
+ROS *-down-* ExperimentControlGui : " "
+note on link
+Incoming topics
+- PluxMsg
+- MindroveArmBandEightChannelMsg
+Outgoing topics
+- N/A
+end note
+
+ROS -down-* ManualExperimentControlGui : " "
+note on link
+Incoming topics
+- PluxMsg
+- MindroveArmBandEightChannelMsg
+- UserInputMsg
+Outgoing topics
+- N/A
+end note
+
+ROS -down-* RobotControlArbiter : " "
+note on link
+Incoming topics
+- ToolDataMsg
+- UserInputMsg
+Outgoing topics
+- ExerciseState
+- DynamicForceMode
+- SetFreedriveParams
+end note
+
+ROS -down-* RvizManager : " "
+note on link
+Incoming topics
+- N/A
+Outgoing topics
+- PoseArray
+- Marker
+- Path
+end note
+
+ROS -down-* ExerciseManager : " "
+note on link
+Incoming topics
+- JointState
+- PoseStamped
+Outgoing topics
+- N/A
+end note
+
+ExperimentControlGui -down-* RobotControlArbiter
+ExperimentControlGui -down-* RvizManager
+ExperimentControlGui -down-* ExerciseManager
+
+ExperimentControlGui -right[hidden]- ManualExperimentControlGui
+
+RobotControlArbiter <-left-> RvizManager
+RobotControlArbiter <-right-> ExerciseManager
+
+note left of RvizManager::dynamic_force_poses
+Visualized items to display on RViz
+end note
+
+note left of RvizManager::exercise_feedback
+Exercise feedback callback, from which the 
+exercise progress is sent to RViz to update 
+progress
+end note
+
+note left of RvizManager::compute_and_send_camera_frame
+Update RViz orbit camera pose wrt the current
+end-effector pose
+end note
+
+note left of RvizManager::visualize_exercise
+Publish the visualized path and pose array to 
+RViz
+end note
+
+note left of RobotControlArbiter::robot
+Robot object from which robot statuses and commands 
+are interfaced through
+end note
+
+note left of RobotControlArbiter::state_change_callback
+Input params include callbacks to be used by adjacent classes
+end note
+
+note left of RobotControlArbiter::tool_state_watchdog
+Watchdogs for tool state and input device, which are
+used to determine readiness. If these timeout, the robot
+is put in a safe state
+end note
+
+note left of RobotControlArbiter::start_robot_program
+Functions to be called for requested robot actions
+end note
+
+note left of RobotControlArbiter::change_state
+State transitions go through this function
+end note
+
+note left of RobotControlArbiter::monitor_experiment
+State machine transform, where all 
+state-based monitoring and actions 
+are performed
+end note
+
+note left of ExerciseManager::start_monitoring
+Start/stop monitoring the robot telemetry as an exercise
+is registered
+end note
+
+note left of ExerciseManager::save_exercise
+Compress, save, and load exercise for future usage
+end note
+
+note left of ExerciseManager::get_exercise_dofs
+Map exercise type to applicable task-space DoF's
+end note
+
+@enduml

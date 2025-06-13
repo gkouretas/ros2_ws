@@ -1,0 +1,229 @@
+@startuml
+
+class RealtimeFatigueClassifier {
+    - model: FatigueClassifier
+    - lock: threading.Lock
+    ..Pre-processors..
+    - emg_preprocessor: MindroveEMGPreprocessor
+    - accelerometer_preprocessor: AccelerometerPreprocessor
+    - gyroscope_preprocessor: GyroscopePreprocessor
+    - ecg_preprocessor: ECGPreprocessor
+    ..ROS variables..
+    + node: Node
+    - mindrove_subscriber: Subscription<MindroveArmBandEightChannelMsg>
+    - plux_subscriber: Subscription<PluxMsg>
+    - user_input_subscriber: Subscription<UserInputMsg>
+    - exercise_state_subscriber: Subscription<ExerciseState>
+    - fatigue_publisher: Publisher<FatigueState>
+    - prediction_timer: Timer
+    ..Callbacks..
+    + def update_armband_info(msg: MindroveArmBandEightChannelMsg) -> None
+    + def update_plux_info(msg: PluxMsg) -> None
+    + def update_sensed_fatigue(msg: UserInputMsg) -> None
+    + def update_exercise_state(msg: ExerciseState) -> None
+    + def predict_fatigue() -> None
+    ..Methods..
+    + def clear_buffers() -> None
+    - def init_preprocessor<Preprocessor>(...) -> Preprocessor
+    - def get_inputs() -> tensorflow.Tensor
+    - def get_current_timestep() -> int
+}
+
+class Model {
+    Keras-based model
+}
+
+class FatigueClassifier {
+    ..Constructors..
+    + def from_file(path: Path)
+    + def from_config(config: Dict)
+    ..Preprocess functions..
+    + def input_signal_shape(args: InputArgs) -> CompiledInputShape
+    + def preprocess_signal(...) -> Tuple[Array, CompiledInputShape]
+    ..Custon functions..
+    + def loss(true, pred, mask) -> tensorflow.Tensor
+    ..Model class variables..
+    + lstm_blocks: List[FatigueLSTMBlock]
+    - mask: Optional[float]
+    - hard_coded_weights: bool
+    - reshape_layer: Concatenate
+    - classification_layer: Union[Dense, Add]
+}
+
+class FatigueLSTMBlock {
+    ..Constructors..
+    + def from_config(config: Dict)
+    ..Model class variables..
+    + weight: float
+    + mask: Optional[float]
+    + lstm_kwargs: Dict
+    + conv_layers_kwargs: Optional[List[Dict]]
+    - classification_layer: Dense
+    - scale_layer: Optional[Lambda]
+    - input_shape
+    - output_shape
+    - last_pred: float
+    ....
+    + def compute_output_shape(input_shape)
+}
+
+note left of FatigueLSTMBlock::lstm_kwargs
+Parameters for LSTM layers of block. 
+Will default to standard keras LSTM settings.
+end note
+
+note left of FatigueLSTMBlock::conv_layers_kwargs
+Parameters for convolution layers of block
+If none are specified, no convolution layers are used
+end note
+
+note left of FatigueClassifier::hard_coded_weights
+Hard-coded weights per sensor for 
+end note
+
+note left of FatigueClassifier::reshape_layer
+Combines the layers from the model blocks
+end note
+
+note left of FatigueClassifier::classification_layer
+Final layer that classifies the fatigue level, either a summation
+of the blocks or a dense layer based upon the configuration
+end note
+
+Model *-down- FatigueClassifier
+Model *-down- FatigueLSTMBlock
+FatigueLSTMBlock o-right- FatigueClassifier::lstm_blocks
+FatigueClassifier *-right- RealtimeFatigueClassifier::model
+
+note left of RealtimeFatigueClassifier::predict_fatigue
+Timer callback
+end note
+
+note left of RealtimeFatigueClassifier::init_preprocessor
+Input arguments:
+- fs: float
+- name_substr: str
+- preprocessor_cls: type[Preprocessor]
+- **preprocessor_kwargs
+end note
+
+abstract class Preprocessor<SampleType> {
+    - input_shape: CompiledInputShape
+    - mask_value: float
+    - resampling_factor: Optional[float]
+    ..Properties..
+    + data: tensorflow.Tensor
+    + timestep: int
+    ..Methods..
+    + def preprocess(sample: SampleType) -> None
+    + def reset() -> None
+    - def init_channel_map(additional_channels: Tuple[str, ...]) -> None
+    - def sample_is_empty(sample: MindroveSampleBuffer) -> bool
+    - def insert_sample(sample: float) -> None
+    {abstract} - def filter_data(sample: SampleType) -> float
+}
+
+note left of Preprocessor::input_shape
+Input shape parameters for model
+end note
+
+note left of Preprocessor::mask_value
+Value that will be masked
+end note
+
+note left of Preprocessor::resampling_factor
+Factor to resample data if the sampling frequency of the
+data is different than what the model was trained to
+end note
+
+note left of Preprocessor::preprocess
+Final method
+end note
+
+note left of Preprocessor::insert_sample
+Final method
+end note
+
+class EMGPreprocessor<EmgType>
+{
+    - num_channels: int
+    ..Methods..
+    - def filter_emg_data(sample: Iterable<float>)
+}
+
+note right of EMGPreprocessor::num_channels
+Number of channels in EMG data source
+end note
+
+class MindroveEMGPreprocessor<MindroveEightChannelMsg>
+{
+    - num_channels: 8
+}
+
+class PluxEMGPreprocessor<PluxMsg>
+class AccelerometerPreprocessor<MindroveEightChannelMsg>
+class GyroscopePreprocessor<MindroveEightChannelMsg>
+class ECGPreprocessor<PluxMsg>
+
+package ROS <<database>> {
+    interface fatigue_experiment_control {
+        Fatigue experiment control
+        --
+        The exercise state is used from this to know
+        when to activate the model
+    }
+    interface ros2_mindrove {
+        Mindrove node
+        --
+        Get EMG telemetry in real-time
+    }
+    interface ros2_plux_biosignals {
+        Plux node
+        --
+        Get ECG telemetry in real-time
+    }
+    interface pi_user_input_node {
+        User input node
+        --
+        Get reported fatigue in real-time
+    }
+
+    fatigue_experiment_control -right[hidden]- ros2_mindrove
+    ros2_mindrove -right[hidden]- ros2_plux_biosignals
+    ros2_plux_biosignals -right[hidden]- pi_user_input_node
+}
+
+ROS --* RealtimeFatigueClassifier : " "
+note on link
+Incoming topics:
+- MindroveArmBandEightChannelMsg
+- PluxMsg
+- UserInputMsg
+- ExerciseState
+end note
+
+ROS *-- RealtimeFatigueClassifier : " "
+note on link
+Outgoing topics:
+- FatigueState
+end note 
+
+Preprocessor <|-- EMGPreprocessor
+Preprocessor <|-- AccelerometerPreprocessor
+Preprocessor <|-- GyroscopePreprocessor
+Preprocessor <|-- ECGPreprocessor
+
+EMGPreprocessor <|-- MindroveEMGPreprocessor
+EMGPreprocessor <|-- PluxEMGPreprocessor
+
+MindroveEMGPreprocessor --* RealtimeFatigueClassifier::emg_preprocessor
+AccelerometerPreprocessor --* RealtimeFatigueClassifier::accelerometer_preprocessor
+GyroscopePreprocessor --* RealtimeFatigueClassifier::gyroscope_preprocessor
+ECGPreprocessor --* RealtimeFatigueClassifier::ecg_preprocessor
+
+RealtimeFatigueClassifier::init_preprocessor --* Preprocessor : " "
+note on link
+Pre-processors are used to build the current exercise state tensor for the loaded model
+end note
+
+@enduml

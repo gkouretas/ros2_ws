@@ -24,3 +24,11 @@ log
 # Logs
 *.log
 *.csv
+
+# Exercise files
+*.exercise
+
+# Data
+*.pkl
+*.db3
+*.npy
